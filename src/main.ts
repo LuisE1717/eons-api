@@ -14,11 +14,7 @@ async function bootstrap() {
     }),
   );
   app.enableCors({
-    origin: [
-      'http://localhost:4321',
-      'https://eons-main.vercel.app',
-      'https://www.eons.es',
-    ],
+    origin: ['http://localhost:4321', 'https://eons.es', 'https://www.eons.es'],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
