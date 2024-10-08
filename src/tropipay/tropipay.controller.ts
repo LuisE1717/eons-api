@@ -78,15 +78,14 @@ export class TropiPayController {
         lang: lang || 'en',
         urlSuccess: 'https://www.eons.es/payment',
         urlFailed: 'https://www.eons.es/payment/failed',
-        urlNotification:
-          'https://eons-services.onrender.com/tropipay/',
+        urlNotification: 'https://api.eons.es/tropipay/',
         serviceDate: formattedDateTime,
         client: null,
         directPayment: true,
         paymentMethods: ['EXT', 'TPP'],
       });
     } catch (error) {
-      console.log(error)
+      console.log(error);
       if (error?.error?.message == 'Card credit cashin limit exceded')
         throw new BadRequestException('limit exceded');
     }
@@ -168,12 +167,11 @@ export class TropiPayController {
         epay = 100;
       } else if (data.data.paymentcard.amount === 21250) {
         epay = 250;
-      }else if (data.data.paymentcard.amount === 71999) {
+      } else if (data.data.paymentcard.amount === 71999) {
         epay = 1000;
-      }else if (data.data.paymentcard.amount === 174999) {
+      } else if (data.data.paymentcard.amount === 174999) {
         epay = 2500;
-      }
-      else {
+      } else {
         const match = data.data.paymentcard.description.match(/\d+/);
         epay = match ? parseInt(match[0], 10) : null;
       }

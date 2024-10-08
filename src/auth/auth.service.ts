@@ -32,13 +32,12 @@ export class AuthService {
   async register({ email, password, type }: RegisterDto) {
     let user = await this.userService.findOneByEmail(email);
 
-    if(user){
-      const isPasswordValid = await bcryptjs.compare(password, user?.password)
+    if (user) {
+      const isPasswordValid = await bcryptjs.compare(password, user?.password);
       if (isPasswordValid) {
         return this.sendUser(user);
-      }
-      else {
-        throw new UnauthorizedException('User Alredy exist')
+      } else {
+        throw new UnauthorizedException('User Alredy exist');
       }
     }
 
@@ -46,7 +45,7 @@ export class AuthService {
       email,
       password: await bcryptjs.hash(password, 10),
       type,
-      esencia:0
+      esencia: 0,
     });
 
     return this.sendUser(user);
@@ -64,7 +63,7 @@ export class AuthService {
       password: await bcryptjs.hash(password, 10),
       type: 'google',
       isEmailVerified: true,
-      esencia:0
+      esencia: 0,
     });
 
     return this.sendUser(user);
@@ -82,7 +81,7 @@ export class AuthService {
       password: await bcryptjs.hash(password, 10),
       type: 'microsoft',
       isEmailVerified: true,
-      esencia:0
+      esencia: 0,
     });
 
     return this.sendUser(user);
@@ -178,9 +177,9 @@ export class AuthService {
 
     //console.log(token)
 
-    const resetUrl = `https://www.eons.es/auth/change-password/${token}/${email}`;
+    const resetUrl = `https://eons.es/auth/change-password/${token}/${email}`;
 
-    if(lang == 'es'){
+    if (lang == 'es') {
       const htmlContent = `
       <p>Hola ${user.email},</p>
       <p>Recibimos una solicitud para restablecer tu contraseña. Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
@@ -190,19 +189,18 @@ export class AuthService {
       <p>EONS</p>
     `;
 
-    await this.mailerService.sendMail({
-      to: email,
-      subject: 'Solicitud de restablecimiento de contraseña',
-      html: htmlContent,
-      context: {
-        name: user.email,
-        resetUrl,
-      },
-    });
+      await this.mailerService.sendMail({
+        to: email,
+        subject: 'Solicitud de restablecimiento de contraseña',
+        html: htmlContent,
+        context: {
+          name: user.email,
+          resetUrl,
+        },
+      });
 
-    return { message: 'Password reset email sent', token: token };
-    }
-    else{
+      return { message: 'Password reset email sent', token: token };
+    } else {
       const htmlContent = `
       <p>Hello ${user.email},</p>
       <p>We have received a request to reset your password. Please click the link below to reset your password:</p>
@@ -212,17 +210,17 @@ export class AuthService {
       <p>EONS</p>
     `;
 
-    await this.mailerService.sendMail({
-      to: email,
-      subject: 'Password Reset Request',
-      html: htmlContent,
-      context: {
-        name: user.email,
-        resetUrl,
-      },
-    });
+      await this.mailerService.sendMail({
+        to: email,
+        subject: 'Password Reset Request',
+        html: htmlContent,
+        context: {
+          name: user.email,
+          resetUrl,
+        },
+      });
 
-    return { message: 'Password reset email sent', token: token };
+      return { message: 'Password reset email sent', token: token };
     }
   }
 
@@ -236,7 +234,7 @@ export class AuthService {
     //    throw new BadRequestException('Invalid or expired token');
     // }
 
-    var user = await this.userService.findOneByEmail(email);
+    const user = await this.userService.findOneByEmail(email);
 
     if (!user) {
       throw new BadRequestException('Email does not exist');
@@ -251,7 +249,7 @@ export class AuthService {
     return { message: 'Password successfully reset' };
   }
 
-  async sendVerificationEmail(email: string,lang: string) {
+  async sendVerificationEmail(email: string, lang: string) {
     const user = await this.userService.findOneByEmail(email);
 
     if (!user) {
@@ -267,9 +265,9 @@ export class AuthService {
       secret: jwtConstants.accessSecret,
     });
 
-    const resetUrl = `https://eons-services.onrender.com/auth/verify-email/?token=${token}`;
+    const resetUrl = `https://api.eons.es/auth/verify-email/?token=${token}`;
 
-    if(lang == 'es'){
+    if (lang == 'es') {
       const htmlContent = `
         <p>Hola ${email},</p>
         <p>Por favor verifica tu correo electrónico haciendo clic en el siguiente enlace:</p>
@@ -278,18 +276,20 @@ export class AuthService {
         <p>Saludos,</p>
         <p>EONS</p>
       `;
-  
-      await this.mailerService.sendMail({
-        to: email,
-        subject: 'Verifica tu correo electrónico',
-        html: htmlContent,
-        context: {
-          resetUrl,
-        },
-      });
+      try {
+        await this.mailerService.sendMail({
+          to: email,
+          subject: 'Verifica tu correo electrónico',
+          html: htmlContent,
+          context: {
+            resetUrl,
+          },
+        });
+      } catch (error) {
+        console.log('Error es:', error);
+      }
       return token;
-    }
-    else{
+    } else {
       const htmlContent = `
       <p>Hello ${email},</p>
       <p>Please verify your email by clicking the link below:</p>
@@ -298,19 +298,21 @@ export class AuthService {
       <p>Regards,</p>
       <p>EONS</p>
     `;
+      try {
+        await this.mailerService.sendMail({
+          to: email,
+          subject: 'Verify your email',
+          html: htmlContent,
+          context: {
+            resetUrl,
+          },
+        });
+      } catch (error) {
+        console.log('Error en:', error);
+      }
 
-    await this.mailerService.sendMail({
-      to: email,
-      subject: 'Verify your email',
-      html: htmlContent,
-      context: {
-        resetUrl,
-      },
-    });
-    return token;
+      return token;
     }
-
-    
   }
 
   async verifyEmail(token: string) {
@@ -327,8 +329,7 @@ export class AuthService {
           nombre: 'Cuenta Verificada',
           id_usuario: user.id,
           tipo: 'validAcount',
-          descripcion:
-            'Su cuenta ha sido verificada con éxito',
+          descripcion: 'Su cuenta ha sido verificada con éxito',
           estado: false,
         });
         return { success: true };
