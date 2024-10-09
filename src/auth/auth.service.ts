@@ -211,6 +211,16 @@ export class AuthService {
       throw new NotFoundException('Email does not exist');
     }
 
+<<<<<<< HEAD
+=======
+    // try {
+    //    const payload = await this.jwtService.verifyAsync(token);
+    //    email = payload.email;
+    //  } catch (e) {
+    //    throw new BadRequestException('Invalid or expired token');
+    // }
+
+>>>>>>> fa032c9 (Fix reset password problem)
     user.password = await bcryptjs.hash(newPassword, 10);
     await this.userService.updateUsuario(
       { password: user.password, email: user.email, type: user.type },
