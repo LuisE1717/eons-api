@@ -83,12 +83,16 @@ export class AuthController {
 
   @UseGuards(AccessGuard)
   @Post('reset-password')
-  resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
-    return this.authService.resetPassword(resetPasswordDto);
+  resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+    @Request() req: { user: { email: string; exp: number; iat: number } },
+  ) {
+    const userEmail = req?.user?.email;
+    return this.authService.resetPassword(resetPasswordDto, userEmail);
   }
 
   @Get('verify-email')
-  @Redirect(`https://eons.es/services/true`)
+  @Redirect(`http://localhost:3000/services/true`)
   async verifyEmail(@Query('token') token: string) {
     return this.authService.verifyEmail(token);
   }
@@ -98,7 +102,6 @@ export class AuthController {
     @Query('email') email: string,
     @Query('lang') lang: string,
   ) {
-    //console.log(email);
     return this.authService.sendVerificationEmail(email, lang);
   }
 }

@@ -123,7 +123,7 @@ export class AuthService {
           .pipe(map((response) => response.data))
           .toPromise();
       } catch (error) {
-        //console.log(error);
+        console.log(error);
       }
     } else if (type == 'microsoft') {
     }
@@ -175,8 +175,6 @@ export class AuthService {
       },
     );
 
-    //console.log(token)
-
     const resetUrl = `https://eons.es/auth/change-password/${token}/${email}`;
 
     if (lang == 'es') {
@@ -224,8 +222,11 @@ export class AuthService {
     }
   }
 
-  async resetPassword({ newPassword }: ResetPasswordDto) {
-    let email: string;
+  async resetPassword({ newPassword }: ResetPasswordDto, userEmail: string) {
+    const user = await this.userService.findOneByEmail(userEmail);
+    if (!user) {
+      throw new NotFoundException('Email does not exist');
+    }
 
     // try {
     //    const payload = await this.jwtService.verifyAsync(token);
@@ -233,12 +234,6 @@ export class AuthService {
     //  } catch (e) {
     //    throw new BadRequestException('Invalid or expired token');
     // }
-
-    const user = await this.userService.findOneByEmail(email);
-
-    if (!user) {
-      throw new BadRequestException('Email does not exist');
-    }
 
     user.password = await bcryptjs.hash(newPassword, 10);
     await this.userService.updateUsuario(
