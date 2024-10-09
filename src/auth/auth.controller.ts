@@ -92,7 +92,7 @@ export class AuthController {
   }
 
   @Get('verify-email')
-  @Redirect(`http://localhost:3000/services/true`)
+  @Redirect(`https://eons.es/services/true`)
   async verifyEmail(@Query('token') token: string) {
     return this.authService.verifyEmail(token);
   }
