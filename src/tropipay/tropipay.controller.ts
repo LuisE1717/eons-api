@@ -50,6 +50,7 @@ export class TropiPayController {
     @Query() { lang }: { lang: string },
   ) {
     try {
+      console.log('UserId:', req.user.id);
       const date = new Date();
       const formattedDateTime = date.toLocaleString('es-ES', {
         day: '2-digit',
@@ -65,6 +66,7 @@ export class TropiPayController {
         descripcion: esencia.descripcion,
         precio: Number(esencia.precio) * 100,
       };
+      console.log(payload);
       return await this.tpp.paymentCards.create({
         reference: ref,
         concept: 'de Esencia',
@@ -76,9 +78,9 @@ export class TropiPayController {
         reasonId: 4,
         expirationDays: 1,
         lang: lang || 'en',
-        urlSuccess: 'http://localhost:4321/payment',
-        urlFailed: 'http://localhost:4321/payment/failed',
-        urlNotification: 'http://localhost:3000/tropipay/',
+        urlSuccess: 'https://dev.eons.es/payment',
+        urlFailed: 'https://dev.eons.es/payment/failed',
+        urlNotification: 'http://apidev.eons.es/tropipay/',
         serviceDate: formattedDateTime,
         client: null,
         directPayment: true,
@@ -97,6 +99,7 @@ export class TropiPayController {
     @Body() datah: PaymentOperation,
     @Request() req: { user: JWTUser },
   ) {
+    console.log('UserId:', req.user.id);
     try {
       const date = new Date();
       const formattedDateTime = date.toLocaleString('es-ES', {
@@ -125,10 +128,9 @@ export class TropiPayController {
         reasonId: 4,
         expirationDays: 1,
         lang: 'es',
-        urlSuccess: 'http://localhost:4321/payment',
-        urlFailed: 'http://localhost:4321/payment/failed',
-        urlNotification:
-          'https://webhook.site/c43d202f-2571-4a6c-af46-e2a3ca539851',
+        urlSuccess: 'https://dev.eons.es/payment',
+        urlFailed: 'https://dev.eons.es/payment/failed',
+        urlNotification: 'http://apidev.eons.es/tropipay/',
         //'https://eons-services.onrender.com/tropipay/',
         serviceDate: formattedDateTime,
         client: null,
@@ -136,6 +138,7 @@ export class TropiPayController {
         paymentMethods: ['EXT', 'TPP'],
       });
     } catch (error) {
+      console.log(error);
       if (error?.error?.message == 'Card credit cashin limit exceded')
         throw new BadRequestException('limit exceded');
     }
@@ -143,7 +146,7 @@ export class TropiPayController {
 
   @Post()
   async validateSignature(@Body() data) {
-    //console.log(data.data.bankOrderCode);
+    console.log(JSON.stringify(data, null, 2));
     const { bankOrderCode, originalCurrencyAmount, signaturev2 } = data.data;
     //console.log(signaturev2);
     const clientId = process.env.TROPIPAY_CLIENT_ID;
