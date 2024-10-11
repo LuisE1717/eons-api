@@ -175,7 +175,7 @@ export class AuthService {
       },
     );
 
-    const resetUrl = `https://eons.es/auth/change-password/${token}/${email}`;
+    const resetUrl = `${process.env.FURL}/auth/change-password/${token}/${email}`;
 
     if (lang == 'es') {
       const htmlContent = `
@@ -260,7 +260,7 @@ export class AuthService {
       secret: jwtConstants.accessSecret,
     });
 
-    const resetUrl = `https://api.eons.es/auth/verify-email/?token=${token}`;
+    const resetUrl = `${process.env.BURL}/auth/verify-email/?token=${token}`;
 
     if (lang == 'es') {
       const htmlContent = `

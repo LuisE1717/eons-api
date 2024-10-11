@@ -16,7 +16,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { JWTUser } from 'src/lib/jwt';
 import { AccessGuard } from 'src/auth/auth.guard';
 import { Tropipay } from '@yosle/tropipayjs';
-import { ServerMode$1 } from './type/type';
+// import { ServerMode$1 } from './type/type';
 import { PaymentOperation } from './dto/paymentCheck';
 
 @Controller('tropipay')
@@ -38,7 +38,7 @@ export class TropiPayController {
       'ALLOW_GET_BALANCE',
       'ALLOW_GET_MOVEMENT_LIST',
     ],
-    serverMode: 'Production' as ServerMode$1,
+    // serverMode: 'Production' as ServerMode$1,
   };
   tpp = new Tropipay(this.config);
 
@@ -76,9 +76,9 @@ export class TropiPayController {
         reasonId: 4,
         expirationDays: 1,
         lang: lang || 'en',
-        urlSuccess: 'https://www.eons.es/payment',
-        urlFailed: 'https://www.eons.es/payment/failed',
-        urlNotification: 'https://api.eons.es/tropipay/',
+        urlSuccess: 'http://localhost:4321/payment',
+        urlFailed: 'http://localhost:4321/payment/failed',
+        urlNotification: 'http://localhost:3000/tropipay/',
         serviceDate: formattedDateTime,
         client: null,
         directPayment: true,
@@ -107,6 +107,7 @@ export class TropiPayController {
         minute: '2-digit',
         hour12: true,
       });
+      console.log('Paymentcard data:', datah);
       const ref = (await this.usuarioService.getUsuarioById(req.user.id)).email;
       const payload = {
         descripcion: `${datah.esencia} de Esencia`,
@@ -124,8 +125,8 @@ export class TropiPayController {
         reasonId: 4,
         expirationDays: 1,
         lang: 'es',
-        urlSuccess: 'https://www.eons.es/payment',
-        urlFailed: 'https://www.eons.es/payment/failed',
+        urlSuccess: 'http://localhost:4321/payment',
+        urlFailed: 'http://localhost:4321/payment/failed',
         urlNotification:
           'https://webhook.site/c43d202f-2571-4a6c-af46-e2a3ca539851',
         //'https://eons-services.onrender.com/tropipay/',

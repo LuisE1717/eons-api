@@ -21,7 +21,6 @@ import { JWTUser } from 'src/lib/jwt';
 
 @Controller('auth')
 export class AuthController {
-  private readonly url = process.env.URL;
   constructor(private readonly authService: AuthService) {}
   @Post('register')
   register(
@@ -92,7 +91,7 @@ export class AuthController {
   }
 
   @Get('verify-email')
-  @Redirect(`https://eons.es/services/true`)
+  @Redirect(`${process.env.FURL}/services/true`)
   async verifyEmail(@Query('token') token: string) {
     return this.authService.verifyEmail(token);
   }
