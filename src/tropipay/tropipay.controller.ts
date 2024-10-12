@@ -148,14 +148,15 @@ export class TropiPayController {
   async validateSignature(@Body() data) {
     console.log(JSON.stringify(data, null, 2));
     const { bankOrderCode, originalCurrencyAmount, signaturev2 } = data.data;
-    //console.log(signaturev2);
+    console.log(signaturev2);
     const clientId = process.env.TROPIPAY_CLIENT_ID;
     const clientSecret = process.env.TROPIPAY_CLIENT_SECRET;
 
     const messageToSign = `${bankOrderCode}${clientId}${clientSecret}${originalCurrencyAmount}`;
 
     const expectedSignature = sha256(messageToSign);
-    //console.log(expectedSignature);
+    console.log(expectedSignature);
+    console.log('Son iguales?:', expectedSignature === signaturev2);
 
     if (expectedSignature === signaturev2) {
       let epay = 0;
