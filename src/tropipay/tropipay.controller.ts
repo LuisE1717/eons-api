@@ -67,7 +67,7 @@ export class TropiPayController {
         precio: Number(esencia.precio) * 100,
       };
       console.log(payload);
-      return await this.tpp.paymentCards.create({
+      const payment = {
         reference: ref,
         concept: 'de Esencia',
         favorite: true,
@@ -85,7 +85,9 @@ export class TropiPayController {
         client: null,
         directPayment: true,
         paymentMethods: ['EXT', 'TPP'],
-      });
+      };
+      console.log(JSON.stringify(payment, null, 2));
+      return await this.tpp.paymentCards.create(payment);
     } catch (error) {
       console.log(error);
       if (error?.error?.message == 'Card credit cashin limit exceded')
