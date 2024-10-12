@@ -7,7 +7,9 @@ import {
   Request,
   BadRequestException,
   Query,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { TropiPayService } from './tropipay.service';
 import { EsenciasService } from 'src/esencia/esencia.service';
 import { sha256 } from 'js-sha256';
@@ -26,7 +28,18 @@ export class TropiPayController {
     private readonly esenciaService: EsenciasService,
     private readonly usuarioService: UsuariosService,
     private readonly prisma: PrismaService,
-  ) {}
+  ) {
+    this.tpp.hooks.subscribe({
+      eventType: 'transaction_completed',
+      target: 'web',
+      value: 'https://apidev.eons.es/tropipay/tcompleted',
+    });
+    this.tpp.hooks.subscribe({
+      eventType: 'transaction_charged',
+      target: 'web',
+      value: 'https://apidev.eons.es/tropipay/tcharged',
+    });
+  }
   config = {
     clientId: process.env.TROPIPAY_CLIENT_ID,
     clientSecret: process.env.TROPIPAY_CLIENT_SECRET,
@@ -213,5 +226,19 @@ export class TropiPayController {
   @Post('validate-payment')
   async validatePayment(@Body() data: any) {
     return await this.tropiPayService.validateBankOrder(data);
+  }
+
+  @Post('tcompleted')
+  async transferCompletedHook(@Body() data: any, @Res() res: Response) {
+    console.log('Hook transaction_completed data:');
+    console.log(JSON.stringify(data, null, 2));
+    return res.status(200).send('Webhook received successfully');
+  }
+
+  @Post('tcharged')
+  async transferPaydHook(@Body() data: any, @Res() res: Response) {
+    console.log('Hook transaction_charged data:');
+    console.log(JSON.stringify(data, null, 2));
+    return res.status(200).send('Webhook received successfully');
   }
 }
