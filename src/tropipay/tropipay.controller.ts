@@ -29,16 +29,16 @@ export class TropiPayController {
     private readonly usuarioService: UsuariosService,
     private readonly prisma: PrismaService,
   ) {
-    this.tpp.hooks.subscribe({
-      eventType: 'transaction_completed',
-      target: 'web',
-      value: 'https://apidev.eons.es/tropipay/tcompleted',
-    });
-    this.tpp.hooks.subscribe({
-      eventType: 'transaction_charged',
-      target: 'web',
-      value: 'https://apidev.eons.es/tropipay/tcharged',
-    });
+    // this.tpp.hooks.subscribe({
+    //   eventType: 'transaction_completed',
+    //   target: 'web',
+    //   value: 'https://apidev.eons.es/tropipay/tcompleted',
+    // });
+    // this.tpp.hooks.subscribe({
+    //   eventType: 'transaction_charged',
+    //   target: 'web',
+    //   value: 'https://apidev.eons.es/tropipay/tcharged',
+    // });
   }
   config = {
     clientId: process.env.TROPIPAY_CLIENT_ID,
@@ -257,6 +257,11 @@ export class TropiPayController {
 
   @Post('validate-payment')
   async validatePayment(@Body() data: any) {
+    const delay = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+
+    // Retrasamos el proceso 10 segundos (10000 milisegundos)
+    await delay(10000);
     return await this.tropiPayService.validateBankOrder(data);
   }
 
@@ -270,7 +275,7 @@ export class TropiPayController {
   @Post('tcharged')
   async transferPaydHook(@Body() data: any, @Res() res: Response) {
     console.log('Hook transaction_charged data:');
-    console.log(JSON.stringify(data, null, 2));
+    // console.log(JSON.stringify(data, null, 2));
     return res.status(200).send('Webhook received successfully');
   }
   @Post('verifycation')
@@ -283,17 +288,13 @@ export class TropiPayController {
     },
     @Res() res: Response,
   ) {
-    const clientId = process.env.TROPIPAY_CLIENT_ID;
-    const clientSecret = process.env.TROPIPAY_CLIENT_SECRET;
-    const { signature, bankOrderCode, originalCurrencyAmount } = data;
+    // const clientId = process.env.TROPIPAY_CLIENT_ID;
+    // const clientSecret = process.env.TROPIPAY_CLIENT_SECRET;
+    // const { signature, bankOrderCode, originalCurrencyAmount } = data;
 
-    const messageToSign = `${bankOrderCode}${clientId}${clientSecret}${originalCurrencyAmount}`;
+    // const messageToSign = `${bankOrderCode}${clientId}${clientSecret}${originalCurrencyAmount}`;
 
-    const expectedSignature = sha256(messageToSign);
-
-    console.log(expectedSignature === signature);
-    console.log('Espected:', expectedSignature);
-    console.log('Signature:', signature);
+    // const expectedSignature = sha256(messageToSign);
 
     return res.status(200).send('Webhook received successfully');
   }
