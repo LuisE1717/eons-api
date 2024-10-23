@@ -17,7 +17,7 @@ import { UsuariosService } from 'src/usuario/usuario.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JWTUser } from 'src/lib/jwt';
 import { AccessGuard } from 'src/auth/auth.guard';
-import { ServerSideUtils, Tropipay } from '@yosle/tropipayjs';
+import { Tropipay } from '@yosle/tropipayjs';
 // import { ServerMode$1 } from './type/type';
 import { PaymentOperation } from './dto/paymentCheck';
 
@@ -93,7 +93,7 @@ export class TropiPayController {
         lang: lang || 'en',
         urlSuccess: 'https://dev.eons.es/payment',
         urlFailed: 'https://dev.eons.es/payment/failed',
-        urlNotification: 'http://apidev.eons.es/tropipay',
+        urlNotification: 'https://apidev.eons.es/tropipay',
         serviceDate: formattedDateTime,
         client: null,
         directPayment: true,
@@ -145,7 +145,7 @@ export class TropiPayController {
         lang: 'es',
         urlSuccess: 'https://dev.eons.es/payment',
         urlFailed: 'https://dev.eons.es/payment/failed',
-        urlNotification: 'http://apidev.eons.es/tropipay',
+        urlNotification: 'https://apidev.eons.es/tropipay',
         //'https://eons-services.onrender.com/tropipay/',
         serviceDate: formattedDateTime,
         client: null,
@@ -167,57 +167,89 @@ export class TropiPayController {
       console.log(signaturev2);
       const clientId = process.env.TROPIPAY_CLIENT_ID;
       const clientSecret = process.env.TROPIPAY_CLIENT_SECRET;
-      const sig = ServerSideUtils.verifySignature(
-        {
-          clientId,
-          clientSecret,
-        },
-        originalCurrencyAmount,
-        bankOrderCode,
-        signaturev2,
-      );
 
       const messageToSign = `${bankOrderCode}${clientId}${clientSecret}${originalCurrencyAmount}`;
 
       const expectedSignature = sha256(messageToSign);
-      console.log(expectedSignature);
-      console.log('Son iguales?:', expectedSignature === signaturev2);
-      console.log('Son iguales dif metods?:', sig);
-
-      if (expectedSignature === signaturev2) {
-        let epay = 0;
-        if (data.data.paymentcard.amount === 499) {
-          epay = 5;
-        } else if (data.data.paymentcard.amount === 1440) {
-          epay = 15;
-        } else if (data.data.paymentcard.amount === 2350) {
-          epay = 25;
-        } else if (data.data.paymentcard.amount === 4599) {
-          epay = 50;
-        } else if (data.data.paymentcard.amount === 8999) {
-          epay = 100;
-        } else if (data.data.paymentcard.amount === 21250) {
-          epay = 250;
-        } else if (data.data.paymentcard.amount === 71999) {
-          epay = 1000;
-        } else if (data.data.paymentcard.amount === 174999) {
-          epay = 2500;
-        } else {
-          const match = data.data.paymentcard.description.match(/\d+/);
-          epay = match ? parseInt(match[0], 10) : null;
-        }
-        const user = this.usuarioService.findOneByEmail(data.data.reference);
-        (await user).esencia = (await user).esencia + epay;
-        this.usuarioService.updateUsuario(await user, (await user).id);
-        return this.prisma.compra.create({
-          data: {
-            email: data.data.reference,
-            bank_order: data.data.bankOrderCode,
-          },
-        });
-      } else {
-        console.log('Firma no válida');
+      if (expectedSignature !== signaturev2) {
+        throw new Error('Invalid signature');
       }
+      const amountToEpayMap = new Map<number, number>([
+        [499, 5],
+        [1440, 15],
+        [2350, 25],
+        [4599, 50],
+        [8999, 100],
+        [21250, 250],
+        [71999, 1000],
+        [174999, 2500],
+      ]);
+
+      const amount = data.data.paymentcard.amount;
+      let epay = amountToEpayMap.get(amount) || 0;
+
+      // Si no coincide con los valores predeterminados, trata de extraer el valor de la descripción
+      if (epay === 0) {
+        const match = data.data.paymentcard.description.match(/\d+/);
+        epay = match ? parseInt(match[0], 10) : 0;
+      }
+
+      const user = await this.usuarioService.findOneByEmail(
+        data.data.reference,
+      );
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+      const updatedEsencia = user.esencia + epay;
+      const compra = await this.prisma.compra.create({
+        data: {
+          email: data.data.reference,
+          bank_order: data.data.bankOrderCode,
+        },
+      });
+
+      await this.usuarioService.updateUsuario(
+        { ...user, esencia: updatedEsencia },
+        user.id,
+      );
+
+      return compra;
+
+      // if (expectedSignature === signaturev2) {
+      //   let epay = 0;
+      //   if (data.data.paymentcard.amount === 499) {
+      //     epay = 5;
+      //   } else if (data.data.paymentcard.amount === 1440) {
+      //     epay = 15;
+      //   } else if (data.data.paymentcard.amount === 2350) {
+      //     epay = 25;
+      //   } else if (data.data.paymentcard.amount === 4599) {
+      //     epay = 50;
+      //   } else if (data.data.paymentcard.amount === 8999) {
+      //     epay = 100;
+      //   } else if (data.data.paymentcard.amount === 21250) {
+      //     epay = 250;
+      //   } else if (data.data.paymentcard.amount === 71999) {
+      //     epay = 1000;
+      //   } else if (data.data.paymentcard.amount === 174999) {
+      //     epay = 2500;
+      //   } else {
+      //     const match = data.data.paymentcard.description.match(/\d+/);
+      //     epay = match ? parseInt(match[0], 10) : null;
+      //   }
+      //   const user = this.usuarioService.findOneByEmail(data.data.reference);
+      //   (await user).esencia = (await user).esencia + epay;
+      //   this.usuarioService.updateUsuario(await user, (await user).id);
+      //   return this.prisma.compra.create({
+      //     data: {
+      //       email: data.data.reference,
+      //       bank_order: data.data.bankOrderCode,
+      //     },
+      //   });
+      // } else {
+      //   console.log('Firma no válida');
+      // }
     } catch (error) {
       console.log('Veryfication error', error);
     }
@@ -239,6 +271,30 @@ export class TropiPayController {
   async transferPaydHook(@Body() data: any, @Res() res: Response) {
     console.log('Hook transaction_charged data:');
     console.log(JSON.stringify(data, null, 2));
+    return res.status(200).send('Webhook received successfully');
+  }
+  @Post('verifycation')
+  async verifycation(
+    @Body()
+    data: {
+      signature: string;
+      bankOrderCode: string;
+      originalCurrencyAmount: string;
+    },
+    @Res() res: Response,
+  ) {
+    const clientId = process.env.TROPIPAY_CLIENT_ID;
+    const clientSecret = process.env.TROPIPAY_CLIENT_SECRET;
+    const { signature, bankOrderCode, originalCurrencyAmount } = data;
+
+    const messageToSign = `${bankOrderCode}${clientId}${clientSecret}${originalCurrencyAmount}`;
+
+    const expectedSignature = sha256(messageToSign);
+
+    console.log(expectedSignature === signature);
+    console.log('Espected:', expectedSignature);
+    console.log('Signature:', signature);
+
     return res.status(200).send('Webhook received successfully');
   }
 }

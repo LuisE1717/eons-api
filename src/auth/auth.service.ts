@@ -217,7 +217,6 @@ export class AuthService {
           resetUrl,
         },
       });
-
       return { message: 'Password reset email sent', token: token };
     }
   }
