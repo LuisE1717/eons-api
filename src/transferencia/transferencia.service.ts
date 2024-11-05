@@ -69,14 +69,20 @@ export class TransferenciaService {
   }
 
   async getRecentTransfers(userId: string) {
+    const userEmail = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: {
+        email: true,
+      },
+    });
     const transfers = await this.prisma.transferencia.findMany({
       where: {
-        OR: [{ user_id: userId }, { receiver: userId }],
+        OR: [{ user_id: userId }, { receiver: userEmail.email }],
       },
       orderBy: {
         date: 'desc',
       },
-      take: 30,
+      // take: 30,
       include: {
         usuario: {
           select: {
@@ -87,9 +93,9 @@ export class TransferenciaService {
     });
 
     return transfers.map((transfer) => ({
-      id: transfer.id,
-      senderEmail: transfer.usuario?.email,
-      receiverEmail: transfer.receiver,
+      user_id: transfer.id,
+      sender: transfer.usuario?.email,
+      receiver: transfer.receiver,
       amount: transfer.amount,
       date: transfer.date,
     }));
