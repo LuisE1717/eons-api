@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model espiritu {
@@ -46,6 +46,7 @@ model usuario {
   notificaciones     notificaciones[]
   pregunta           pregunta[]
   transferencia      transferencia[]
+  launch launch[]
 }
 
 model moneda {
@@ -132,3 +133,24 @@ model notificaciones {
   usuario     usuario? @relation(fields: [id_usuario], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
+model launch {
+  id             String   @id @default(cuid())
+  userId         String   // ID del usuario asociado
+  user           usuario?     @relation(fields: [userId], references: [id])
+  type           String   // Tipo de lanzamiento (evaluacion-etapa1, etc.)
+  shortType      String   // Abreviatura del tipo
+  hexResults     String[] // Arreglo de resultados en hexadecimal
+  steps          Int      // Número de pasos (longitud del arreglo de entradas)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model message {
+  id          String   @id @default(cuid())
+  type        String   // Tipo de evaluación (evaluacion-etapa1, etc.)
+  segmentKey  String   // Clave del segmento (como 1, 2, 3, etc.)
+  language    String   // Idioma del mensaje (es, en, etc.)
+  content     String   // Contenido del mensaje predeterminado
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

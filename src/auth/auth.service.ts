@@ -179,12 +179,16 @@ export class AuthService {
 
     if (lang == 'es') {
       const htmlContent = `
-      <p>Hola ${user.email},</p>
-      <p>Recibimos una solicitud para restablecer tu contraseña. Haz clic en el siguiente enlace para restablecer tu contraseña:</p>
+      <p>Estimado(a) ${user.email},</p>
+      <p>Hemos recibido una solicitud para restablecer la contraseña de su cuenta en nuestra plataforma. Para completar este proceso y asegurar que solo
+       usted tenga acceso a nuestros servicios de excelencia, haga clic en el enlace a continuación:</p>
       <p><a href="${resetUrl}">Restablecer Contraseña</a></p>
-      <p>Si no solicitaste este cambio, puedes ignorar este correo electrónico.</p>
-      <p>Saludos,</p>
-      <p>EONS</p>
+      <p>Si no realizó esta solicitud, le recomendamos omitir este mensaje para mantener la seguridad de su cuenta.</p>
+
+      <p>Agradecemos su confianza en un servicio reservado solo para quienes comparten nuestro compromiso con la más alta calidad y distinción.</p>
+
+      <p>Cordialmente,</p>
+      <p>Equipo EONS</p>
     `;
 
       await this.mailerService.sendMail({
@@ -200,12 +204,16 @@ export class AuthService {
       return { message: 'Password reset email sent', token: token };
     } else {
       const htmlContent = `
-      <p>Hello ${user.email},</p>
-      <p>We have received a request to reset your password. Please click the link below to reset your password:</p>
+      <p>Dear ${user.email},</p>
+      <p>We have received a request to reset the password for your account on our platform. To complete this process and ensure that only you have access to
+       our services of excellence, please click on the link below:</p>
       <p><a href="${resetUrl}">Reset Password</a></p>
-      <p>If you did not request this change, you can ignore this email.</p>
-      <p>Regards,</p>
-      <p>EONS</p>
+      <p>If you did not make this request, we recommend ignoring this message to maintain the security of your account.</p>
+
+      <p>We appreciate your trust in a service reserved exclusively for those who share our commitment to the highest quality and distinction.</p>
+
+      <p>Sincerely,</p>
+      <p>EONS Team</p>
     `;
 
       await this.mailerService.sendMail({
@@ -263,12 +271,16 @@ export class AuthService {
 
     if (lang == 'es') {
       const htmlContent = `
-        <p>Hola ${email},</p>
-        <p>Por favor verifica tu correo electrónico haciendo clic en el siguiente enlace:</p>
-        <p><a href="${resetUrl}">Verificar Email</a></p>
-        <p>Si no solicitaste este cambio, puedes ignorar este correo electrónico.</p>
-        <p>Saludos,</p>
-        <p>EONS</p>
+        <p>Estimado(a) ${email},</p>
+        <p>Nos complace informarle que está a un paso de completar su proceso de autenticación en nuestra plataforma exclusiva. Para finalizar su verificación y 
+        asegurar su acceso a este entorno reservado para quienes buscan la excelencia, haga clic en el enlace a continuación:</p>
+        <p><a href="${resetUrl}">Verificar Correo Electrónico</a></p>
+       <p>Si usted no solicitó esta verificación, le sugerimos omitir este mensaje para mantener la integridad de su cuenta.</p>
+
+      <p>Agradecemos su confianza en un servicio reservado solo para quienes comparten nuestro compromiso con la más alta calidad y distinción.</p>
+
+      <p>Cordialmente,</p>
+      <p>Equipo EONS</p>
       `;
       try {
         await this.mailerService.sendMail({
@@ -285,12 +297,15 @@ export class AuthService {
       return token;
     } else {
       const htmlContent = `
-      <p>Hello ${email},</p>
-      <p>Please verify your email by clicking the link below:</p>
-      <p><a href="${resetUrl}">Verify Email</a></p>
-      <p>If you did not request this change, you can ignore this email.</p>
-      <p>Regards,</p>
-      <p>EONS</p>
+      <p>Dear ${email},</p>
+      <p>We are pleased to inform you that you are one step away from completing your authentication process on our exclusive platform. To finalize your 
+      verification and ensure access to this environment reserved for those pursuing excellence, please click on the link below:</p>
+      <p><a href="${resetUrl}">Verify Email Address</a></p>
+      <p>If you did not request this verification, we recommend ignoring this message to maintain the integrity of your account.</p>
+      <p>We appreciate your trust in a service reserved exclusively for those who share our commitment to the highest quality and distinction.</p>
+
+      <p>Sincerely,</p>
+      <p>EONS Team</p>
     `;
       try {
         await this.mailerService.sendMail({
