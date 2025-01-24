@@ -20,13 +20,4 @@ export class EvaluacionGeneralController {
       req.user.id,
     );
   }
-
-  @Post()
-  @UseGuards(AccessGuard)
-  async saveEvaluation(
-    @Param() { matrix }: { matrix: string },
-    @Request() req: { user: JWTUser },
-  ) {
-    return this.evaluacionGeneralService.saveMatrix(matrix, req.user.id);
-  }
 }
