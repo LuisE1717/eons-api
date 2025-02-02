@@ -18,6 +18,9 @@ export class MessagesService {
           language,
           segmentKey: String(index + 1),
         },
+        orderBy: {
+          id: 'asc',
+        },
       });
 
       if (parseInt(result) > allMessage.length) {
