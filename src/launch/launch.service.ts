@@ -78,4 +78,16 @@ export class LaunchService {
       },
     });
   }
+
+  async getEvals(userId: string) {
+    // Buscar todos los launches del usuario con shortType etp1 o etp2
+    return await this.prisma.launch.findMany({
+      where: {
+        userId: userId, // Filtrar por el usuario específico
+        shortType: {
+          in: ['etp1', 'etp2'], // Filtrar por shortType etp1 o etp2
+        },
+      },
+    });
+  }
 }

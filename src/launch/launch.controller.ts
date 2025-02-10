@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Body,
+  Get,
   BadRequestException,
   UseGuards,
   Request,
@@ -34,6 +35,13 @@ export class LaunchController {
       type,
       shortType,
     );
+  }
+
+  @UseGuards(AccessGuard)
+  @Get('evals')
+  async getEvals(@Request() req: { user: JWTUser }) {
+    const userId = req.user.id;
+    return this.launchService.getEvals(userId);
   }
 
   // @Get()

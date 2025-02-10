@@ -2,177 +2,6 @@ import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const structures = {
-  es: [
-    'La {adjective} {noun} {action} hacia {goal}.',
-    'El {noun} en tu {adjective} {action} al universo.',
-    'A través de {noun}, {action} {goal}.',
-    'Tu {noun} {action} en perfecta {adjective}.',
-    'La {adjective} conexión con {noun} te lleva a {goal}.',
-    '{action} con la fuerza de la {adjective} {noun}.',
-    'El poder de {noun} {action} la {goal}.',
-    'Tu {adjective} {noun} {action} caminos {adjective} hacia {goal}.',
-    '{noun} y {noun} {action} {goal}.',
-    '{goal} se alcanza al {action} con {noun}.',
-  ],
-  en: [
-    'The {adjective} {noun} {action} towards {goal}.',
-    'The {noun} in your {adjective} {action} to the universe.',
-    'Through {noun}, {action} {goal}.',
-    'Your {noun} {action} in perfect {adjective}.',
-    'The {adjective} connection with {noun} leads you to {goal}.',
-    '{action} with the power of the {adjective} {noun}.',
-    'The power of {noun} {action} the {goal}.',
-    'Your {adjective} {noun} {action} {adjective} paths to {goal}.',
-    '{noun} and {noun} {action} {goal}.',
-    '{goal} is achieved by {action} with {noun}.',
-  ],
-};
-
-const words = {
-  es: {
-    adjectives: [
-      'infinita',
-      'sagrada',
-      'mágica',
-      'luminosa',
-      'poderosa',
-      'positiva',
-      'creativa',
-      'profunda',
-      'equilibrada',
-      'celestial',
-    ],
-    nouns: [
-      'energía',
-      'esencia',
-      'vibración',
-      'claridad',
-      'gratitud',
-      'intención',
-      'sabiduría',
-      'fuerza interior',
-      'armonía',
-      'intuición',
-    ],
-    actions: [
-      'fluye',
-      'resuena',
-      'se alinea',
-      'conecta',
-      'crece',
-      'se transforma',
-      'ilumina',
-      'manifiesta',
-      'atrae',
-      'despierta',
-    ],
-    goals: [
-      'abundancia',
-      'sabiduría',
-      'iluminación',
-      'claridad interior',
-      'propósito',
-      'crecimiento personal',
-      'paz interior',
-      'conexión universal',
-      'armonía',
-      'amor propio',
-    ],
-  },
-  en: {
-    adjectives: [
-      'infinite',
-      'sacred',
-      'magical',
-      'luminous',
-      'powerful',
-      'positive',
-      'creative',
-      'deep',
-      'balanced',
-      'celestial',
-    ],
-    nouns: [
-      'energy',
-      'essence',
-      'vibration',
-      'clarity',
-      'gratitude',
-      'intention',
-      'wisdom',
-      'inner strength',
-      'harmony',
-      'intuition',
-    ],
-    actions: [
-      'flows',
-      'resonates',
-      'aligns',
-      'connects',
-      'grows',
-      'transforms',
-      'illuminates',
-      'manifests',
-      'attracts',
-      'awakens',
-    ],
-    goals: [
-      'abundance',
-      'wisdom',
-      'enlightenment',
-      'inner clarity',
-      'purpose',
-      'personal growth',
-      'inner peace',
-      'universal connection',
-      'harmony',
-      'self-love',
-    ],
-  },
-};
-
-// Generador de mensajes
-function generateMessages(
-  count: number,
-  language: 'es' | 'en',
-): { type: string; language: string; segmentKey: string; content: string }[] {
-  const messages = [];
-  const type = 'evaluacion-etapa1';
-
-  const structureList = structures[language];
-  const wordList = words[language];
-
-  for (let i = 0; i < count; i++) {
-    const structure =
-      structureList[Math.floor(Math.random() * structureList.length)];
-    const adjective =
-      wordList.adjectives[
-        Math.floor(Math.random() * wordList.adjectives.length)
-      ];
-    const noun =
-      wordList.nouns[Math.floor(Math.random() * wordList.nouns.length)];
-    const action =
-      wordList.actions[Math.floor(Math.random() * wordList.actions.length)];
-    const goal =
-      wordList.goals[Math.floor(Math.random() * wordList.goals.length)];
-
-    const messageText = structure
-      .replace('{adjective}', adjective)
-      .replace('{noun}', noun)
-      .replace('{action}', action)
-      .replace('{goal}', goal);
-
-    messages.push({
-      type: type,
-      language: language,
-      segmentKey: '2',
-      content: messageText,
-    });
-  }
-  return messages;
-}
-
 const main = async () => {
   const type = 'evaluacion-etapa1';
   const positiveMessages = [
@@ -181,7 +10,7 @@ const main = async () => {
       language: 'es',
       segmentKey: '1',
       content:
-        '(Etapa 1) Luego de analizar su personalidad, el sistema ha detectado que usted posee una personalidad algo variada y cambiante. Sin embargo el patrón que más se percibe en usted es de ',
+        'Luego de analizar su personalidad, el sistema ha detectado que usted posee una personalidad algo variada y cambiante. Sin embargo el patrón que más se percibe en usted es de ',
     },
     {
       type,
@@ -194,7 +23,7 @@ const main = async () => {
       language: 'es',
       segmentKey: '1',
       content:
-        '(Etapa 1) Luego de analizar su personalidad, el sistema ha detectado que usted se encuentra en proceso de solidificación de una personalidad genuina. Sin embargo al analizar su conducta actual, podemos detectar que usted está muy cerca de establecer un patrón de',
+        'Luego de analizar su personalidad, el sistema ha detectado que usted se encuentra en proceso de solidificación de una personalidad genuina. Sin embargo al analizar su conducta actual, podemos detectar que usted está muy cerca de establecer un patrón de',
     },
     {
       type,
@@ -206,7 +35,7 @@ const main = async () => {
       language: 'es',
       segmentKey: '1',
       content:
-        '(Etapa 1) Luego de analizar su personalidad, el sistema ha detectado una relativa estabilidad conductual, en usted por lo general siempre se evidencia un patrón de ',
+        'Luego de analizar su personalidad, el sistema ha detectado una relativa estabilidad conductual, en usted por lo general siempre se evidencia un patrón de ',
     },
     {
       type,
@@ -219,7 +48,7 @@ const main = async () => {
       language: 'es',
       segmentKey: '1',
       content:
-        '(Etapa 1) Luego de analizar su personalidad, el patrón conductual que detectamos en usted es de ',
+        'Luego de analizar su personalidad, el patrón conductual que detectamos en usted es de ',
     },
     {
       type,
@@ -2249,10 +2078,6 @@ const main = async () => {
         'By the way, the (System Root) has a personal message for you:"He is an unstoppable force when he sets his mind to something. When he decides something, there is nothing that can stop him. That determination and willpower are unmatched, and they assure him that he will go far. Whatever he sets his mind to, he will achieve it, because he has the ability to turn his dreams into concrete realities."Let`s move on to analyze your emotional state, your daily habits and your life purpose.',
     },
   ];
-  // const spanishMessages = generateMessages(256, 'es');
-  // const englishMessages = generateMessages(256, 'en');
-  // const complementaryMessages = [...spanishMessages, ...englishMessages];
-
   const data = [...positiveMessages, ...middleMessages, ...finishingMessages];
   const allData = data.map((item) => ({
     type: 'evaluacion-etapa1', // provide a default type
