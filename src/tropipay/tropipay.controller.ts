@@ -18,7 +18,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { JWTUser } from 'src/lib/jwt';
 import { AccessGuard } from 'src/auth/auth.guard';
 import { Tropipay } from '@yosle/tropipayjs';
-// import { ServerMode$1 } from './type/type';
+import { ServerMode$1 } from './type/type';
 import { PaymentOperation } from './dto/paymentCheck';
 
 @Controller('tropipay')
@@ -51,7 +51,7 @@ export class TropiPayController {
       'ALLOW_GET_BALANCE',
       'ALLOW_GET_MOVEMENT_LIST',
     ],
-    // serverMode: 'Production' as ServerMode$1,
+    serverMode: 'Production' as ServerMode$1,
   };
   tpp = new Tropipay(this.config);
 
