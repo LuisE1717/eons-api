@@ -192,6 +192,7 @@ export class AuthService {
     `;
 
       await this.mailerService.sendMail({
+        from: '"EONS" <infoeons.es@gmail.com>',
         to: email,
         subject: 'Solicitud de restablecimiento de contraseña',
         html: htmlContent,
@@ -217,6 +218,7 @@ export class AuthService {
     `;
 
       await this.mailerService.sendMail({
+        from: '"EONS" <infoeons.es@gmail.com>',
         to: email,
         subject: 'Password Reset Request',
         html: htmlContent,
@@ -284,6 +286,7 @@ export class AuthService {
       `;
       try {
         await this.mailerService.sendMail({
+          from: '"EONS" <infoeons.es@gmail.com>',
           to: email,
           subject: 'Verifica tu correo electrónico',
           html: htmlContent,
@@ -309,6 +312,7 @@ export class AuthService {
     `;
       try {
         await this.mailerService.sendMail({
+          from: '"EONS" <infoeons.es@gmail.com>',
           to: email,
           subject: 'Verify your email',
           html: htmlContent,

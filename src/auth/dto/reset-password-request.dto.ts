@@ -6,5 +6,5 @@ export class ResetPasswordRequestDto {
   email: string;
 
   @IsString()
-  lang:string;
+  lang: string;
 }
