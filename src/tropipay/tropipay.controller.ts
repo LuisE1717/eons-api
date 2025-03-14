@@ -187,7 +187,7 @@ export class TropiPayController {
 
       const amount = data.data.paymentcard.amount;
       let epay = amountToEpayMap.get(amount) || 0;
-
+      epay = epay * 2; // Duplicamos la cantidad de esencia
       // Si no coincide con los valores predeterminados, trata de extraer el valor de la descripción
       if (epay === 0) {
         const match = data.data.paymentcard.description.match(/\d+/);
