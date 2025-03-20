@@ -327,6 +327,20 @@ export class AuthService {
       return token;
     }
   }
+  async readDocumentation(userId: string) {
+    try {
+      this.notificationsService.createNotification({
+        nombre: 'Instrucciones de uso leidas',
+        id_usuario: userId,
+        tipo: 'readDocumentation',
+        descripcion: 'A leido las instrucciones de uso',
+        estado: false,
+      });
+      return { success: true };
+    } catch (error) {
+      throw new Error('Token inválido o expirado');
+    }
+  }
 
   async verifyEmail(token: string) {
     try {
