@@ -156,6 +156,8 @@ export class AuthService {
   private async sendProfile(user: usuario, notificaciones: notificaciones[]) {
     return {
       essence: user.esencia,
+      isVerified: user.isEmailVerified,
+      isRead: user.readDocumentation,
       notificaciones,
     };
   }
@@ -329,14 +331,21 @@ export class AuthService {
   }
   async readDocumentation(userId: string) {
     try {
-      this.notificationsService.createNotification({
-        nombre: 'Instrucciones de uso leidas',
-        id_usuario: userId,
-        tipo: 'readDocumentation',
-        descripcion: 'A leido las instrucciones de uso',
-        estado: false,
-      });
+      const user = await this.userService.findOneById(userId);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      user.readDocumentation = true;
+      await this.userService.updateUsuario(user, userId);
       return { success: true };
+      // this.notificationsService.createNotification({
+      //   nombre: 'Instrucciones de uso leidas',
+      //   id_usuario: userId,
+      //   tipo: 'readDocumentation',
+      //   descripcion: 'A leido las instrucciones de uso',
+      //   estado: false,
+      // });
+      // return { success: true };
     } catch (error) {
       throw new Error('Token inválido o expirado');
     }

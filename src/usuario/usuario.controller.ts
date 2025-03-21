@@ -1,7 +1,13 @@
-import { Controller } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
+import { UsuariosService } from './usuario.service';
 @Controller('usuarios')
 export class UsuariosController {
-  // constructor(private readonly usuariosService: UsuariosService) {}
+  constructor(private readonly usuariosService: UsuariosService) {}
+  @Get('is-verified')
+  async isVerified(@Query('email') email: string) {
+    const user = await this.usuariosService.findOneByEmail(email);
+    return { verified: user?.isEmailVerified ?? false };
+  }
   // @Get()
   // async getAllUsuarios() {
   //   return this.usuariosService.getAllUsuarios();

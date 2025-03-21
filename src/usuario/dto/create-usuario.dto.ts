@@ -3,5 +3,5 @@ export class CreateUsuarioDto {
   password?: string;
   type: string;
   isEmailVerified?: boolean;
-  esencia?:number
+  esencia?: number;
 }

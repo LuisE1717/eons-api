@@ -41,12 +41,13 @@ model usuario {
   type               String              @db.VarChar
   esencia            Float?
   createdAt          DateTime            @default(now())
+  readDocumentation  Boolean             @default(false)
   espiritu           espiritu[]
   evaluacion_general evaluacion_general?
+  launch             launch[]
   notificaciones     notificaciones[]
   pregunta           pregunta[]
   transferencia      transferencia[]
-  launch launch[]
 }
 
 model moneda {
@@ -134,23 +135,23 @@ model notificaciones {
 }
 
 model launch {
-  id             String   @id @default(cuid())
-  userId         String   // ID del usuario asociado
-  user           usuario?     @relation(fields: [userId], references: [id])
-  type           String   // Tipo de lanzamiento (evaluacion-etapa1, etc.)
-  shortType      String   // Abreviatura del tipo
-  hexResults     String[] // Arreglo de resultados en hexadecimal
-  steps          Int      // Número de pasos (longitud del arreglo de entradas)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id         String   @id @default(cuid())
+  userId     String
+  type       String
+  shortType  String
+  hexResults String[]
+  steps      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       usuario  @relation(fields: [userId], references: [id])
 }
 
 model message {
-  id          String   @id @default(cuid())
-  type        String   // Tipo de evaluación (evaluacion-etapa1, etc.)
-  segmentKey  String   // Clave del segmento (como 1, 2, 3, etc.)
-  language    String   // Idioma del mensaje (es, en, etc.)
-  content     String   // Contenido del mensaje predeterminado
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  type       String
+  segmentKey String
+  language   String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
