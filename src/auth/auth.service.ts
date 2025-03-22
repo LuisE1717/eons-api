@@ -279,6 +279,7 @@ export class AuthService {
         <p>Nos complace informarle que está a un paso de completar su proceso de autenticación en nuestra plataforma exclusiva. Para finalizar su verificación y 
         asegurar su acceso a este entorno reservado para quienes buscan la excelencia, haga clic en el enlace a continuación:</p>
         <p><a href="${resetUrl}">Verificar Correo Electrónico</a></p>
+        <p>¡Importante! Activar vpn si presenta problemas en el proceso de validación.</p>
        <p>Si usted no solicitó esta verificación, le sugerimos omitir este mensaje para mantener la integridad de su cuenta.</p>
 
       <p>Agradecemos su confianza en un servicio reservado solo para quienes comparten nuestro compromiso con la más alta calidad y distinción.</p>
