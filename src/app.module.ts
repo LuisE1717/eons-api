@@ -20,6 +20,9 @@ import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // Esto asegura que las variables de entorno estén disponibles globalmente
+    }),
     EspirituModule,
     PreguntaModule,
     RespuestaModule,
@@ -28,7 +31,6 @@ import { NotificationsModule } from './notifications/notifications.module';
     UsuarioModule,
     MonedaModule,
     AuthModule,
-    ConfigModule.forRoot(),
     TropiPayModule,
     RespuestaPredialogoModule,
     EvaluacionGeneralModule,

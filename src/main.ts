@@ -14,9 +14,16 @@ async function bootstrap() {
     }),
   );
   app.enableCors({
-    origin: ['http://localhost:4321', 'https://eons.es', 'https://www.eons.es'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: [
+      'http://localhost:4321',
+      'https://eons.es',
+      'https://www.eons.es',
+      'http://localhost:3000',
+      'http://localhost:5173',
+    ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: 'Content-Type, Authorization, Accept',
   });
   await app.listen(3000);
 }

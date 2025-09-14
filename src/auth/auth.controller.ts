@@ -8,6 +8,8 @@ import {
   Query,
   Redirect,
   Headers,
+  Res,
+  Logger,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -16,12 +18,15 @@ import { AccessGuard } from './auth.guard';
 import { RefreshGuard } from './auth.refresGuard';
 import { ResetPasswordRequestDto } from './dto/reset-password-request.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-//import { Oauth2Dto as Oauth2Dto } from './dto/oauth2.dto';
 import { JWTUser } from 'src/lib/jwt';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+  
   constructor(private readonly authService: AuthService) {}
+  
   @Post('register')
   register(
     @Body()
@@ -29,22 +34,6 @@ export class AuthController {
   ) {
     return this.authService.register(registerDto);
   }
-
-  // @Post('google')
-  // google(
-  //   @Body()
-  //   registerDto: Oauth2Dto,
-  // ) {
-  //   return this.authService.register(registerDto);
-  // }
-
-  // @Post('microsoft')
-  // microsoft(
-  //   @Body()
-  //   registerDto: Oauth2Dto,
-  // ) {
-  //   return this.authService.register(registerDto);
-  // }
 
   @Post('login')
   login(@Body() loginDto: LoginDto) {
@@ -70,7 +59,11 @@ export class AuthController {
   @Get('profile')
   @UseGuards(AccessGuard)
   profile(@Request() req) {
-    return this.authService.getProfile(req?.user?.id);
+    const userId = typeof req?.user?.id === 'number' 
+      ? req.user.id.toString() 
+      : req.user.id;
+    
+    return this.authService.getProfile(userId);
   }
 
   @Post('request-password-reset')
@@ -86,13 +79,33 @@ export class AuthController {
     @Request() req,
     @Body() resetPasswordDto: ResetPasswordDto
     ) {
-    return this.authService.resetPassword(resetPasswordDto,req?.user?.email);
+    // El email debe venir del token JWT del usuario autenticado
+    const userEmail = req.user.email;
+    return this.authService.resetPassword(resetPasswordDto, userEmail);
   }
 
   @Get('verify-email')
-  @Redirect('https://www.eons.es/services/true')
-  async verifyEmail(@Query('token') token: string) {
-    return this.authService.verifyEmail(token);
+  async verifyEmail(@Query('token') token: string, @Res() res: Response) {
+    this.logger.debug(`🔍 Verification token received: ${token}`);
+    
+    if (!token) {
+      this.logger.error('❌ No token provided in query parameters');
+      return res.redirect('https://www.eons.es/email-verification?error=no_token');
+    }
+
+    try {
+      const result = await this.authService.verifyEmail(token);
+      this.logger.debug(`✅ Verification result: ${JSON.stringify(result)}`);
+      
+      if (result.success) {
+        return res.redirect('https://www.eons.es/verification-success');
+      } else {
+        return res.redirect(`https://www.eons.es/email-verification?error=${encodeURIComponent(result.message)}`);
+      }
+    } catch (error) {
+      this.logger.error(`❌ Error in verify-email endpoint: ${error.message}`, error.stack);
+      return res.redirect(`https://www.eons.es/email-verification?error=${encodeURIComponent(error.message)}`);
+    }
   }
 
   @Get('request-verify-email')
@@ -100,7 +113,6 @@ export class AuthController {
     @Query('email') email: string,
     @Query('lang') lang: string
     ) {
-    //console.log(email);
-    return this.authService.sendVerificationEmail(email,lang);
+    return this.authService.sendVerificationEmail(email, lang);
   }
 }
