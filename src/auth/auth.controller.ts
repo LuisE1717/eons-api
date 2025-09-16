@@ -6,7 +6,6 @@ import {
   UseGuards,
   Request,
   Query,
-  Redirect,
   Headers,
   Res,
   Logger,
@@ -90,7 +89,8 @@ export class AuthController {
     
     if (!token) {
       this.logger.error('❌ No token provided in query parameters');
-      return res.redirect('https://www.eons.es/email-verification?error=no_token');
+      // return res.redirect('https://www.eons.es/email-verification?error=no_token'); // Producción - COMENTADO
+      return res.redirect('http://localhost:4321/email-verification?error=no_token'); // Desarrollo
     }
 
     try {
@@ -98,13 +98,16 @@ export class AuthController {
       this.logger.debug(`✅ Verification result: ${JSON.stringify(result)}`);
       
       if (result.success) {
-        return res.redirect('https://www.eons.es/verification-success');
+        // return res.redirect('https://www.eons.es/verification-success'); // Producción - COMENTADO
+        return res.redirect('http://localhost:4321/verification-success'); // Desarrollo
       } else {
-        return res.redirect(`https://www.eons.es/email-verification?error=${encodeURIComponent(result.message)}`);
+        // return res.redirect(`https://www.eons.es/email-verification?error=${encodeURIComponent(result.message)}`); // Producción - COMENTADO
+        return res.redirect(`http://localhost:4321/email-verification?error=${encodeURIComponent(result.message)}`); // Desarrollo
       }
     } catch (error) {
       this.logger.error(`❌ Error in verify-email endpoint: ${error.message}`, error.stack);
-      return res.redirect(`https://www.eons.es/email-verification?error=${encodeURIComponent(error.message)}`);
+      // return res.redirect(`https://www.eons.es/email-verification?error=${encodeURIComponent(error.message)}`); // Producción - COMENTADO
+      return res.redirect(`http://localhost:4321/email-verification?error=${encodeURIComponent(error.message)}`); // Desarrollo
     }
   }
 
