@@ -203,7 +203,9 @@ export class AuthService {
       },
     );
 
-    const resetUrl = `https://eons.es/auth/change-password/${token}/${email}`;
+    // const resetUrl = `https://eons.es/auth/change-password/${token}/${email}`; // Producción - COMENTADO
+    const resetUrl = `http://localhost:4321/auth/change-password/${token}/${email}`; // Desarrollo
+    
 
     if(lang == 'es'){
       const htmlContent = `
@@ -293,7 +295,9 @@ export class AuthService {
       secret: jwtConstants.accessSecret,
     });
 
-    const resetUrl = `https://api.eons.es/auth/verify-email/?token=${token}`;
+    // const resetUrl = `https://api.eons.es/auth/verify-email/?token=${token}`; // Producción - COMENTADO
+    const resetUrl = `http://localhost:3000/auth/verify-email/?token=${token}`; // Desarrollo
+
 
     if(lang == 'es'){
       const htmlContent = `
