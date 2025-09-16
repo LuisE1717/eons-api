@@ -22,6 +22,7 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+  private readonly isDevelopment = true; // Forzar desarrollo
 
   constructor(
     private readonly userService: UsuariosService,
@@ -203,8 +204,8 @@ export class AuthService {
       },
     );
 
-    // const resetUrl = `https://eons.es/auth/change-password/${token}/${email}`; // Producción - COMENTADO
-    const resetUrl = `http://localhost:4321/auth/change-password/${token}/${email}`; // Desarrollo
+    // URLs de desarrollo forzadas
+    const resetUrl = `http://localhost:4321/auth/change-password/${token}/${email}`;
     
 
     if(lang == 'es'){
@@ -295,8 +296,8 @@ export class AuthService {
       secret: jwtConstants.accessSecret,
     });
 
-    // const resetUrl = `https://api.eons.es/auth/verify-email/?token=${token}`; // Producción - COMENTADO
-    const resetUrl = `http://localhost:3000/auth/verify-email/?token=${token}`; // Desarrollo
+    // URL de desarrollo forzada
+    const resetUrl = `http://localhost:3000/auth/verify-email/?token=${token}`;
 
 
     if(lang == 'es'){

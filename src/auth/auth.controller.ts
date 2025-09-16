@@ -23,6 +23,8 @@ import { Response } from 'express';
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
+  private readonly isDevelopment = true; // Forzar desarrollo
+  private readonly frontendUrl = 'http://localhost:4321'; // URL corregida
   
   constructor(private readonly authService: AuthService) {}
   
@@ -89,8 +91,8 @@ export class AuthController {
     
     if (!token) {
       this.logger.error('❌ No token provided in query parameters');
-      // return res.redirect('https://www.eons.es/email-verification?error=no_token'); // Producción - COMENTADO
-      return res.redirect('http://localhost:4321/email-verification?error=no_token'); // Desarrollo
+      // Redirección directa y explícita
+      return res.redirect('http://localhost:4321/email-verification?error=no_token');
     }
 
     try {
@@ -98,16 +100,16 @@ export class AuthController {
       this.logger.debug(`✅ Verification result: ${JSON.stringify(result)}`);
       
       if (result.success) {
-        // return res.redirect('https://www.eons.es/verification-success'); // Producción - COMENTADO
-        return res.redirect('http://localhost:4321/verification-success'); // Desarrollo
+        // Redirección directa y explícita a verification-success
+        return res.redirect('http://localhost:4321/verification-success?success=true');
       } else {
-        // return res.redirect(`https://www.eons.es/email-verification?error=${encodeURIComponent(result.message)}`); // Producción - COMENTADO
-        return res.redirect(`http://localhost:4321/email-verification?error=${encodeURIComponent(result.message)}`); // Desarrollo
+        // Redirección directa y explícita con error
+        return res.redirect(`http://localhost:4321/email-verification?error=${encodeURIComponent(result.message)}`);
       }
     } catch (error) {
       this.logger.error(`❌ Error in verify-email endpoint: ${error.message}`, error.stack);
-      // return res.redirect(`https://www.eons.es/email-verification?error=${encodeURIComponent(error.message)}`); // Producción - COMENTADO
-      return res.redirect(`http://localhost:4321/email-verification?error=${encodeURIComponent(error.message)}`); // Desarrollo
+      // Redirección directa y explícita con error
+      return res.redirect(`http://localhost:4321/email-verification?error=${encodeURIComponent(error.message)}`);
     }
   }
 
