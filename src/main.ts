@@ -15,11 +15,11 @@ async function bootstrap() {
   );
   app.enableCors({
     origin: [
-      'http://localhost:4321',
-      'https://eons.es',
-      'https://www.eons.es',
-      'http://localhost:3000',
-      'http://localhost:5173',
+      'http://localhost:4321', // Desarrollo frontend
+      'http://localhost:3000', // Desarrollo backend
+      'http://localhost:5173', // Desarrollo alternativo
+      // 'https://eons.es', // Producción - COMENTADO
+      // 'https://www.eons.es', // Producción - COMENTADO
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
