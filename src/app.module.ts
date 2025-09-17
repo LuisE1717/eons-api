@@ -17,6 +17,7 @@ import { TransferenciaModule } from './transferencia/transferencia.module';
 import { WebsocketModule } from './websockets/websocket.module';
 import { EsenciaModule } from './esencia/esencia.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { LanzamientosModule } from './lanzamientos/lanzamientos.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     RespuestaDiaModule,
     UsuarioModule,
     MonedaModule,
+    LanzamientosModule,
     AuthModule,
     TropiPayModule,
     RespuestaPredialogoModule,

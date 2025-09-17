@@ -46,6 +46,7 @@ model usuario {
   notificaciones     notificaciones[]
   pregunta           pregunta[]
   transferencia      transferencia[]
+  consultasOraculo   ConsultaOraculo[]   @relation("ConsultaOraculoToUsuario")
 }
 
 model moneda {
@@ -61,6 +62,22 @@ model respuesta_dia {
 model respuesta_especial {
   id        String  @id @db.VarChar
   respuesta String? @db.VarChar
+}
+
+model ConsultaOraculo {
+  id               String   @id @default(cuid())
+  id_usuario       String
+  tipo             String
+  shortType        String
+  resultados       Json
+  mensajeFinal     String
+  parrafoUnificado String
+  fecha            DateTime @default(now())
+  
+  
+  usuario usuario @relation(fields: [id_usuario], references: [id], onDelete: Cascade, name: "ConsultaOraculoToUsuario")
+  
+  @@map("consultas_oraculo")
 }
 
 model esencia {
