@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { DialogoAbiertoService } from './dialogo-abierto.service';
 
@@ -17,9 +17,10 @@ interface CombinacionMonedas {
 
 @Injectable()
 export class LanzamientosService {
+  private readonly logger = new Logger(LanzamientosService.name);
   constructor(
     private prisma: PrismaService,
-    private dialogoAbiertoService: DialogoAbiertoService
+    private dialogoAbiertoService: DialogoAbiertoService,
   ) {}
 
   // Ampliado a 16 combinaciones básicas con múltiples resultados cada una
@@ -387,7 +388,7 @@ export class LanzamientosService {
       coins: coins,
       resultado: combinacion.resultados[randomIndex],
       interpretacion: combinacion.interpretaciones[randomIndex],
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     // Guardar en base de datos
@@ -401,7 +402,7 @@ export class LanzamientosService {
         steps: coins.length,
         createdAt: new Date(),
         updatedAt: new Date()
-      }
+      },
     });
 
     return resultado;
@@ -462,11 +463,11 @@ export class LanzamientosService {
     try {
       // Convertir las posiciones de monedas al formato esperado (1-4)
       const lanzamientosConvertidos = coinPositions.map(coins => {
-        if (coins[0] === 1 && coins[1] === 1) return 1;
-        if (coins[0] === 1 && coins[1] === 0) return 2;
-        if (coins[0] === 0 && coins[1] === 1) return 3;
-        if (coins[0] === 0 && coins[1] === 0) return 4;
-        return 1; // Por defecto
+        if (coins[0] === 1 && coins[1] === 1) return [1];
+        if (coins[0] === 1 && coins[1] === 0) return [2];
+        if (coins[0] === 0 && coins[1] === 1) return [3];
+        if (coins[0] === 0 && coins[1] === 0) return [4];
+        return [1]; // Por defecto
       });
 
       // Procesar la secuencia completa
