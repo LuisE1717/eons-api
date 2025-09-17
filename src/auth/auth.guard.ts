@@ -1,62 +1,51 @@
 import {
   CanActivate,
   ExecutionContext,
-  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Request } from 'express';
-import { jwtConstants } from './constants/jwt.constant';
 import { JwtService } from '@nestjs/jwt';
+import { Request } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { NotificationsService } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class AccessGuard implements CanActivate {
   constructor(
-    private readonly jwtService: JwtService,
-    private readonly prisma: PrismaService,
-    private readonly notificationsService: NotificationsService,
+    private jwtService: JwtService,
+    private prisma: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-
     const token = this.extractTokenFromHeader(request);
-    //console.log(token)
+    
     if (!token) {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException('Token no proporcionado');
     }
-
+    
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: jwtConstants.accessSecret,
+        secret: process.env.JWT_SECRET,
       });
-
-      const user = await this.prisma.usuario.findFirst({
-        where: { id: payload.id },
+      
+      // Verificar que el usuario existe en la base de datos
+      const user = await this.prisma.usuario.findUnique({
+        where: { id: payload.sub },
       });
-
-      if (!user || !user.isEmailVerified) {
-        if (user) {
-          this.notificationsService.createNotification({
-            nombre: 'Cuenta sin Verificar',
-            id_usuario: user.id,
-            tipo: 'notValidAcount',
-            descripcion: `Aún no ha validado su cuenta, comienze el proceso aquí`,
-            estado: false,
-          });
-          throw new ForbiddenException('Email not verified');
-        } else {
-          throw new UnauthorizedException();
-        }
+      
+      if (!user) {
+        throw new UnauthorizedException('Usuario no existe');
       }
-
-      request.user = payload;
-    } catch (err) {
-      throw err;
+      
+      request['user'] = {
+        id: payload.sub,
+        email: payload.email,
+        type: payload.type,
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Token inválido o expirado');
     }
-
+    
     return true;
   }
 

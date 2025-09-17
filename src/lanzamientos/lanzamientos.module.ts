@@ -1,12 +1,19 @@
 import { Module } from '@nestjs/common';
-import { LanzamientosController } from './lanzamientos.controller';
 import { LanzamientosService } from './lanzamientos.service';
-import { PrismaModule } from 'src/prisma/prisma.module';
+import { LanzamientosController } from './lanzamientos.controller';
+import { DialogoAbiertoService } from './dialogo-abierto.service';
+import { PrismaService } from 'src/prisma/prisma.service';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
+  imports: [
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: '24h' },
+    }),
+  ],
   controllers: [LanzamientosController],
-  providers: [LanzamientosService],
-  imports: [PrismaModule],
+  providers: [LanzamientosService, DialogoAbiertoService, PrismaService],
   exports: [LanzamientosService],
 })
 export class LanzamientosModule {}

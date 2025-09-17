@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { DialogoAbiertoService } from './dialogo-abierto.service';
 
 export interface PasoResultado {
   paso: number;
@@ -16,7 +17,10 @@ interface CombinacionMonedas {
 
 @Injectable()
 export class LanzamientosService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private dialogoAbiertoService: DialogoAbiertoService
+  ) {}
 
   // Ampliado a 16 combinaciones básicas con múltiples resultados cada una
   private readonly combinaciones: CombinacionMonedas[] = [
@@ -132,7 +136,7 @@ export class LanzamientosService {
         "Dos tercios de tu petición están concedidos, el restante se manifiesta en forma superior a lo esperado.",
         "Fuerzas yang predominan con un toque yin necesario. El equilibrio perfecto se está gestando.",
         "Apoyo mayoritario del universo con una lección de fe incluida. Confiar sin ver es tu desafío y don.",
-        "Dos confirmaciones claras y una que llegará como sorpresa divina. Mantente alerta a señales inusuales."
+        "Dobles confirmaciones claras y una que llegará como sorpresa divina. Mantente alerta a señales inusuales."
       ]
     },
     {
@@ -142,7 +146,7 @@ export class LanzamientosService {
         "Fuerzas en movimiento crean un baile divino de oportunidades. Tu flexibilidad será recompensada con avances significativos.",
         "Sí, no, sí: el universo te dice que perseveres tras los obstáculos. El resultado final será favorable si mantienes la fe.",
         "Intercalación de energías que purifican tu camino. Lo que parece interrupción es en realidad protección y redirección divina.",
-        "Apertura, cierre y reapertura indican ciclos completándose. Un capítulo termina para que uno mejor pueda comenzar.",
+        "Apertura, cierre và reapertura indican ciclos completándose. Un capítulo termina para que uno mejor pueda comenzar.",
         "Señal de que los finales son comienzos disfrazados. Lo que parece pérdida es espacio ganado para nuevas bendiciones."
       ],
       interpretaciones: [
@@ -157,20 +161,20 @@ export class LanzamientosService {
     {
       coins: [true, false, false],
       resultados: [
-        "Un faro de luz en la tormenta. Aunque las circunstancias parezcan adversas, tienes la guía interna necesaria para navegar hacia aguas tranquilas.",
-        "Inicio prometedor seguido de desafíos que prueban tu determinación. Superarlos te llevará a un nivel de realización inalcanzable de otra manera.",
-        "Una puerta abierta entre dos cerradas indica la dirección exclusiva para tu crecimiento. No distraigas tu energía en caminos laterales.",
-        "Señal de enfoque prioritario. Entre múltiples opciones, solo una conduce a tu verdadero destino. Tu intuición sabe cuál es.",
-        "Fuerza individual contra corriente. Tu luz personal es suficiente para iluminar el camino aunque el entorno parezca oscuro.",
-        "Semilla de potencial en tierra fértil pero con condiciones climáticas desafiantes. Tu crecimiento será lento pero extremadamente robusto."
+        "Far solitario en noche cerrada. Tu luz individual es suficiente para guiarte y guiar a otros through la oscuridad más densa.",
+        "Única apertura entre triple resistencia indica camino exclusivo. No distraigas energías en frentes secundarios, concéntrate en la única vía viable.",
+        "Semilla de potencial en tierra árida. Tu crecimiento será lento pero extremadamente valioso por surgir en condiciones desafiantes.",
+        "Señal de enfoque laser. Entre múltiples puertas cerradas, solo una abierta te muestra donde concentrar todos tus recursos.",
+        "Pionero abriendo camino en territorio virgen. Tu soledad es en realidad privilegio de ir primero donde otros seguirán.",
+        "Fuerza minoritaria que contiene verdad mayoritaria. Aunque parezcas solo, llevas la chispa que eventualmente iluminará todo."
       ],
       interpretaciones: [
-        "Pionero espiritual abriendo camino donde otros retroceden. Tu valor inspira a quienes te rodean.",
-        "Fuerza interior desproporcionada a las circunstancias externas. Tu poder personal supera cualquier desafío.",
-        "Visión clara en medio de la confusión. Donde otros ven problemas, tú ves oportunidades camufladas.",
-        "Resiliencia ejemplar. Te levantas cada vez más fuerte después de cada caída.",
-        "Fe inquebrantable que se fortalece en la adversidad. Tus pruebas son tu entrenamiento avanzado.",
-        "Luz que brilla más intensamente en la oscuridad. Tu presencia transforma entornos desafiantes."
+        "Portador de luz en oscuridad. Tu soledad luminosa es faro para perdidos.",
+        "Pionero espiritual. Vas primero para allanar el camino a quienes vendrán después.",
+        "Fuerza minoritaria con impacto mayoritario. Tu aparente pequeñez es engañosa.",
+        "Focus master. Sabes concentrarte en lo esencial ignorando distracciones.",
+        "Resistente exceptional. Floreces donde otros se marchitan, creces donde otros se estancan.",
+        "Guardian de la chispa única. Proteges la llama esencial cuando todo alrededor parece apagarse."
       ]
     },
     {
@@ -206,7 +210,7 @@ export class LanzamientosService {
         "Maestro del equilibrio. Encuentras el punto justo entre acción y paciencia, entre avanzar y esperar.",
         "Centrado en el presente. Tu poder radica en habitar completamente el aquí y ahora.",
         "Navegante de contrastes. Sabes maniobrar entre fuerzas opuestas sin perder tu rumbo.",
-        "Mediador natural. Encuentras armonía donde otros ven conflicto.",
+        "Mediador natural. Encuentras armonía donde otros ven conflictos.",
         "Guardián del equilibrio. Tu presencia estabiliza sistemas y relaciones.",
         "Punto de anclaje en la tormenta. Eres roca firme en medio de la fluctuación."
       ]
@@ -216,7 +220,7 @@ export class LanzamientosService {
       resultados: [
         "Después del invierno, la primavera más floreciente. Un largo periodo de gestación da frutos extraordinarios que justifican toda espera.",
         "Doble prueba superada que abre las compuertas celestiales. Tu resistencia es recompensada con acceso a dimensiones superiores de abundancia.",
-        "Noche oscura del alma que precede a la iluminación más brillante. La profundidad de tu oscuridad determina la intensidad de tu luz venidera.",
+        "Noche oscura del alma que precede a la iluminación más brillante. La profundidad de tu oscuridad determina la intensidad de tua luz venidera.",
         "Preparación extensa para un destino glorioso. Cada aparente demora estaba perfeccionando los detalles para tu máximo beneficio.",
         "Raíces profundas que ahora sostienen un árbol frondoso. Lo que parecía crecimiento lento era en realidad cimentación sólida.",
         "Silencio prolongado que precede al mensaje más importante. La espera purificó tu capacidad de escuchar la verdad esencial."
@@ -254,7 +258,7 @@ export class LanzamientosService {
       coins: [true, true, true, true],
       resultados: [
         "Cuádruple alineación cósmica sin precedentes. Las cuatro esquinas del universo conspiran simultáneamente a tu favor en matters de amor, salud, prosperidad y propósito.",
-        "Sello cuádruple de confirmación divina. Tus proyectos reciben bendición en los cuatro puntos cardinales, asegurando estabilidad y crecimiento multidireccional.",
+        "Sello cuádruple de confirmación divina. Tus proyectos reciben blessión en los cuatro puntos cardinales, asegurando estabilidad y crecimiento multidireccional.",
         "Estabilidad perfecta en los cuatro pilares de la vida. Equilibrio entre cuerpo, mente, espíritu y emociones crea una base inquebrantable para tu evolución.",
         "Cuatro puertas celestiales abiertas simultáneamente. Acceso ilimitado a guidance, provisión, protección y inspiración desde dimensiones superiores.",
         "Cruz cósmica de bendición que marca un antes y después. Este momento de alineación perfecta reconfigura tu realidad hacia tu máximo potencial.",
@@ -329,299 +333,153 @@ export class LanzamientosService {
     {
       coins: [false, false, false, true],
       resultados: [
-        "Después de la noche triple, el amanecer más esperado. La larga espera culmina en realización que justifica every momento de paciencia ejercida.",
-        "Triple prueba superada abre puerta a dimensión superior. Tu resistencia es recompensada con acceso a niveles de abundancia previously inalcanzables.",
-        "Gestación prolongada da fruto extraordinario. Lo que parecía demora excesiva era tiempo necesario para maduración perfecta.",
-        "Silencio extenso precede al mensaje más importante. La espera purificó tu capacidad de recepción para contener verdad superior.",
-        "Raíces ultra profundas sostienen árbol gigantesco. Tu crecimiento lento creó base masiva para expansión espectacular.",
-        "Vacío completo que precede a plenitud total. La nada absoluta se transforma en el todo integrado en momento divino."
+        "Después de la noche más oscura, el amanecer más brillante. Un largo periodo de pruebas da paso a una bendición de proporciones épicas que justifica toda espera.",
+        "Triple resistencia superada que abre compuertas celestiales. Tu perseverancia es recompensada con acceso a dimensiones superiores de abundancia y sabiduría.",
+        "Noche oscura del alma que precede a la iluminación total. La profundidad de tu oscuridad determina la intensidad de tu luz venidera.",
+        "Preparación extensiva para un destino glorioso. Cada aparente demora estaba perfeccionando los detalles para tu máximo beneficio.",
+        "Raíces profundas que ahora sostienen un árbol frondoso. Lo que parecía crecimiento lento era en realidad cimentación sólida para expansión espectacular.",
+        "Silencio prolongado que precede al mensaje más importante. La espera purificó tu capacidad de escuchar la verdad esencial del universo."
       ],
       interpretaciones: [
-        "Maestro de la paciencia cósmica. Sabes esperar el timing perfecto sin desesperar.",
-        "Transformador de oscuridad en luz. Conviertes penumbras prolongadas en amaneceres gloriosos.",
-        "Experto en gestación prolongada. Comprendes el valor de los procesos lentos pero profundos.",
-        "Receptor de compensación divina. El universo restaura en medida exponencial lo que pareció perdido.",
-        "Portador de frutos tardíos pero exquisitos. Tu cosecha vale la espera por su calidad exceptional.",
-        "Navegante de la noche larga. Conoces las estrellas que solo se ven en la oscuridad profunda."
+        "Experto en transformar dificultades en ventajas monumentales. Tu alquimia interior convierte obstáculos en peldaños hacia el éxito.",
+        "Portador de luz tras larga oscuridad. Tu brillo es más valioso por haber conocido la penumbra más profunda.",
+        "Maestro de la paciencia cósmica. Sabes esperar el timing divino sin desesperar, confiar sin sombra de duda.",
+        "Constructor de cimientos inquebrantables. Prefieres base sólida aunque tarde más en ver la estructura completa.",
+        "Transformador de limitaciones en libertades expansivas. Cada restricción superada amplía exponencialmente tu horizonte.",
+        "Testigo de la resurrección después de la muerte simbólica total. Renaces más sabio, poderoso y alineado que nunca."
       ]
     },
     {
       coins: [false, false, true, true],
       resultados: [
-        "Después del invierno doble, primavera gemela. Un periodo de escasez da paso a abundancia duplicada que sobrecompensa toda privación anterior.",
-        "Doble noche oscura precede doble amanecer. La profundidad de tu oscuridad determina la intensidad de tu luz venidera, que será doblemente brillante.",
-        "Resistencia prolongada abre puertas gemelas. Tu perseverancia es recompensada con acceso a bendiciones en pares que se multiplican entre sí.",
-        "Pruebas duales superadas conducen a realización dual. Cada desafío vencido abre un frente de bendición, resultando en victoria compuesta.",
-        "Base sólida tras doble prueba sostiene crecimiento exponencial. Los cimientos reforzados por adversidad permiten expansión spectacular.",
-        "Silencio doble que precede revelación dual. La espera purifica tu capacidad de recibir mensajes múltiples simultáneamente."
+        "Después del invierno, la primavera doblemente floreciente. Un periodo de gestación da frutos extraordinarios en abundancia duplicada que justifican toda espera.",
+        "Doble prueba superada que abre las compuertas celestiales de par en par. Tu resistencia es recompensada con acceso ilimitado a bendiciones multidimensionales.",
+        "Noche oscura que precede a la doble iluminación. La profundidad de tu oscuridad determina la intensidad dual de tu luz venidera.",
+        "Preparación extensa para un destino doblemente glorioso. Cada aparente demora estaba perfeccionando los detalles para beneficio máximo duplicado.",
+        "Raíces profundas que ahora sostienen árbol frondoso con doble fructificación. Lo que parecía crecimiento lento era cimentación sólida para abundancia exponencial.",
+        "Silencio prolongado que precede al mensaje doblemente importante. La espera purificó tu capacidad de escuchar verdades gemelas del universo."
       ],
       interpretaciones: [
-        "Transformador de adversidad dual en beneficio múltiple. Conviertes dos desafíos en cuatro bendiciones.",
-        "Maestro de la resiliencia compuesta. Superas pruebas en pares emergiendo con fuerza multiplicada.",
-        "Receptor de compensación exponencial. El universo te devuelve en medida doble lo invertido en paciencia.",
-        "Portador de luz tras oscuridad dual. Tu brillo es más valioso por haber conocido la penumbra prolongada.",
-        "Alquimista de pruebas gemelas. Transmutas dos dificultades en ventajas complementarias.",
-        "Experto en gestación prolongada con fruto múltiple. Tu espera genera cosecha abundante y variada."
+        "Experto en transformar dificultades en ventajas multiplicadas. Tu alquimia interior convierte obstáculos en peldaños hacia éxito duplicado.",
+        "Portador de luz dual tras oscuridad profunda. Tu brillo es más valioso por haber conocido la penumbra y ahora irradias doble intensidad.",
+        "Maestro de la paciencia recompensada exponencialmente. Esperar con fe atrae bendiciones duplicadas que superan toda expectativa.",
+        "Constructor de cimientos para estructuras monumentales. Prefieres base sólida para edificar obras que perduran generaciones.",
+        "Transformador de limitaciones en libertades expansivas. Cada restricción superada amplía tu horizonte en progresión geométrica.",
+        "Testigo de resurrección después de muerte simbólica. Renaces doblemente poderoso, sabio y alineado con propósito superior."
       ]
     }
   ];
 
-  private readonly mensajesFinales = [
-    "Hoy es un día de transformación y crecimiento espiritual profundo. Tu alma brilla con intensidad única, atrayendo hacia ti todas las bendiciones que mereces. Confía en que el universo conspira a tu favor en cada momento.",
-    "El universo te sonríe con amor infinito. Cada paso que das está guiado por fuerzas superiores que conocen tu verdadero potencial. Abraza el camino que se despliega ante ti con fe inquebrantable.",
-    "La magia del cosmos se manifiesta en cada aspecto de tu vida hoy. Eres el arquitecto de tu destino y cada elección te acerca más a la versión más elevada de tu ser. Permite que la sabiduría ancestral fluya a través de ti.",
-    "Tu conexión con el mundo espiritual se intensifica hoy. Los mensajes que recibes son claros y directos: confía en tu intuición, sigue tu corazón y recuerda que eres un ser divino viviendo una experiencia humana llena de propósito.",
-    "El velo entre los mundos se hace más delgado para ti hoy. Aprovecha esta conexión especial para recibir guidance y claridad sobre tu misión de vida. Eres mucho más poderoso de lo que imaginas.",
-    "Las energías cósmicas bailan a tu favor en este día especial. Cada latido de tu corazón está en sintonía con el ritmo del universo, guiándote hacia tu máximo potencial y más allá de lo que puedes imaginar.",
-    "Hoy recibes la confirmación de que estás exactamente donde necesitas estar. Cada experiencia, cada encuentro, cada desafío es parte del plan divino para tu evolución espiritual. Confía en el proceso.",
-    "El amor universal fluye a través de ti como un río de luz. Eres canal de bendiciones no solo para ti mismo sino para todos aquellos cuyo camino se cruza con el tuyo. Tu luz es faro en la oscuridad.",
-    "La sabiduría ancestral resuena en cada célula de tu ser hoy. Escucha los susurros de tus antepasados espirituales, pues tienen mensajes importantes para tu camino actual. Eres el eslabón entre pasado y futuro.",
-    "Tu presencia en el mundo hace una diferencia mayor de lo que crees. Cada sonrisa, cada acto de bondad, cada pensamiento positivo crea ondas de energía que transforman la realidad a tu alrededor. Eres mago de tu existencia."
-  ];
-
-  // Nueva función para interpretar secuencias complejas
-  private interpretarSecuencia(secuencia: boolean[][]): { resultado: string; interpretacion: string } {
-    // Contar patrones en la secuencia
-    const totalLanzamientos = secuencia.length;
-    const carasPorLanzamiento = secuencia[0].length;
-    
-    // Calcular estadísticas
-    let totalCaras = 0;
-    let totalCruces = 0;
-    const patrones: string[] = [];
-    
-    secuencia.forEach(lanzamiento => {
-      const caras = lanzamiento.filter(val => val).length;
-      const cruces = lanzamiento.length - caras;
-      totalCaras += caras;
-      totalCruces += cruces;
-      
-      // Convertir a patrón (C para cara, X para cruz)
-      const patron = lanzamiento.map(val => val ? 'C' : 'X').join('');
-      patrones.push(patron);
-    });
-    
-    const porcentajeCaras = (totalCaras / (totalLanzamientos * carasPorLanzamiento)) * 100;
-    
-    // Detectar patrones especiales
-    const todosCaras = secuencia.every(l => l.every(v => v));
-    const todosCruces = secuencia.every(l => l.every(v => !v));
-    const alternanciaPerfecta = this.detectarAlternanciaPerfecta(secuencia);
-    const patronCiclico = this.detectarPatronCiclico(patrones);
-    
-    // Interpretar según patrones detectados
-    if (todosCaras) {
-      return {
-        resultado: "ALINEACIÓN CÓSMICA PERFECTA. Las siete esferas celestiales se alinean a tu favor en una conjunción astral sin precedentes. Tu energía magnetiza oportunidades extraordinarias en todos los ámbitos de tu existencia. Este raro fenómeno indica que estás viviendo un momento único de sincronicidad divina donde todo lo que emanas regresa multiplicado.",
-        interpretacion: "Eres un canal de luz pura en este momento. Tu conexión con la fuente divina está en su punto máximo, permitiéndote manifestar con extraordinaria facilidad. Aprovecha esta ventana cósmica para proyectar tus intenciones más elevadas, pues el universo responde con un sí incondicional a tus peticiones alineadas con tu propósito superior."
-      };
-    }
-    
-    if (todosCruces) {
-      return {
-        resultado: "PERIODO DE GESTACIÓN PROFUNDA. El universo te invita a un retiro interior donde las semillas de tu próximo ciclo se preparan en silencio. Esta aparente quietud es en realidad la antesala de una transformación radical. Las siete puertas cerradas simultáneamente indican que toda energía debe volverse hacia dentro para germinar la próxima versión de tu ser.",
-        interpretacion: "No malinterpretes el silencio como ausencia. Estás en el útero cósmico donde se gestan los mayores milagros. Este periodo de aparente inacción es requisito para la poderosa revelación que se aproxima. Confía en el proceso de gestación invisible y prepara tu vasija para contener la luz que nacerá de esta oscuridad sagrada."
-      };
-    }
-    
-    if (alternanciaPerfecta) {
-      return {
-        resultado: "DANZA CÓSMICA DE OPUESTOS. Yin y yang bailan en perfecta armonía en tu vida, creando un ritmo divino que equilibra acción y contemplación, avance y reflexión. Esta alternancia perfecta indica maestría en navegar los polos de la existencia sin aferrarte a extremos. El universo te muestra que el camino medio es la vía de la sabiduría.",
-        interpretacion: "Eres maestro del equilibrio dinámico. No te estancas en posiciones fijas sino que fluyes con el movimiento natural del cosmos. Esta capacidad de adaptarte sin perder tu centro es tu mayor don en este ciclo. Sigue bailando con la vida, aceptando tanto los momentos de luz como de sombra como partes necesarias del todo perfecto."
-      };
-    }
-    
-    if (patronCiclico) {
-      return {
-        resultado: "CICLOS QUE SE REPITEN CON SABIDURÍA CRECIENTE. El universo te muestra patrones recurrentes pero con un componente evolutivo. Estás revisitando lecciones familiares pero desde un nivel de conciencia superior. Cada repetición del ciclo te acerca a la maestría completa sobre este aspecto de tu vida.",
-        interpretacion: "Reconoces los patrones kármicos que se repiten pero ahora con poder transformador. Donde antes caías en automatismos, ahora ejerces consciencia plena. Este es el signo definitivo de que estás rompiendo cadenas ancestrales y escribiendo nuevo código existencial para ti y tu linaje."
-      };
-    }
-    
-    if (porcentajeCaras > 80) {
-      return {
-        resultado: "MAREA ALTA DE BENDICIONES. Las fuerzas cósmicas fluyen abrumadoramente a tu favor, creando una ola de oportunidades y sincronicidades favorables. Este es un periodo de manifestación acelerada donde tus pensamientos y emociones se materializan con velocidad inusual. Usa este poder con sabiduría y responsabilidad.",
-        interpretacion: "Eres un imán de abundancia multidimensional. Tu frecuencia vibratoria atrae como nevera magnética todo lo que resuena con tu esencia elevada. Mantén tu vasija energetica limpia y tu intención pura, pues el poder de manifestación está potenciado exponencialmente durante este ciclo de gracia cósmica."
-      };
-    }
-    
-    if (porcentajeCaras < 20) {
-      return {
-        resultado: "RETIRO ESTRATÉGICO DEL MUNDO EXTERNO. El universo temporalmente redirige tu energía hacia el mundo interior para una recarga profunda y reconfiguración esencial. Esta aparente desconexión es en realidad la preparación para un relanzamiento más poderoso. Las condiciones externas se aquietan para que escuches la voz interior.",
-        interpretacion: "No fighting la quietud, abrázala como el suelo fértil donde germinarán tus próximos pasos. Este repliegue táctico te permite conservar energía para cuando las condiciones externas sean más propicias. Aprovecha para profundizar en tu práctica espiritual, pues la semilla que plantas ahora determinará la cosecha venidera."
-      };
-    }
-    
-    // Si no hay patrones especiales detectados, usar interpretación basada en combinaciones individuales
-    return this.interpretarCombinacionesIndividuales(secuencia);
+  // Obtener combinación basada en las monedas
+  private obtenerCombinacion(coins: boolean[]): CombinacionMonedas {
+    return this.combinaciones.find(comb => 
+      comb.coins.length === coins.length &&
+      comb.coins.every((val, index) => val === coins[index])
+    ) || this.combinaciones[0]; // Por defecto
   }
 
-  // Función auxiliar para detectar alternancia perfecta
-  private detectarAlternanciaPerfecta(secuencia: boolean[][]): boolean {
-    for (let i = 1; i < secuencia.length; i++) {
-      const anterior = secuencia[i-1];
-      const actual = secuencia[i];
-      
-      // Verificar si son completamente opuestos
-      const sonOpuestos = anterior.every((val, idx) => val !== actual[idx]);
-      if (!sonOpuestos) return false;
-    }
-    return true;
-  }
-
-  // Función auxiliar para detectar patrones cíclicos
-  private detectarPatronCiclico(patrones: string[]): boolean {
-    if (patrones.length < 4) return false;
+  // Realizar lanzamiento individual
+  async realizarLanzamiento(userId: string, coins: boolean[]): Promise<any> {
+    const combinacion = this.obtenerCombinacion(coins);
+    const randomIndex = Math.floor(Math.random() * combinacion.resultados.length);
     
-    // Buscar patrones que se repiten
-    for (let ciclo = 2; ciclo <= Math.floor(patrones.length / 2); ciclo++) {
-      let esCiclico = true;
-      for (let i = 0; i < patrones.length - ciclo; i++) {
-        if (patrones[i] !== patrones[i + ciclo]) {
-          esCiclico = false;
-          break;
-        }
+    const resultado = {
+      coins: coins,
+      resultado: combinacion.resultados[randomIndex],
+      interpretacion: combinacion.interpretaciones[randomIndex],
+      timestamp: new Date()
+    };
+
+    // Guardar en base de datos
+    await this.prisma.launch.create({
+      data: {
+        id: this.generateId(),
+        userId: userId,
+        type: 'individual',
+        shortType: 'IND',
+        hexResults: coins.map(c => c ? '1' : '0'),
+        steps: coins.length,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
-      if (esCiclico) return true;
-    }
-    return false;
+    });
+
+    return resultado;
   }
 
-  // Función para interpretar basado en combinaciones individuales
-  private interpretarCombinacionesIndividuales(secuencia: boolean[][]): { resultado: string; interpretacion: string } {
-    // Obtener resultados para cada lanzamiento individual
-    const resultadosIndividuales = secuencia.map(lanzamiento => {
-      const combinacion = this.combinaciones.find(c => 
-        c.coins.length === lanzamiento.length && 
-        c.coins.every((val, idx) => val === lanzamiento[idx])
-      );
-      
-      if (!combinacion) {
-        // Combinación no encontrada, usar una por defecto
-        return {
-          resultado: "El universo te envía un mensaje de misterio y potencial ilimitado. Esta combinación única indica que estás escribiendo un camino nuevo, libre de patrones preestablecidos. Tu destino se moldea con cada elección consciente que realizas.",
-          interpretacion: "Eres pionero de realidades no exploradas. Tu camino no sigue mapas conocidos sino que los creas con cada paso. Esta singularidad es tu poder principal, permitiéndote acceso a dimensiones de posibilidad que otros ni siquiera vislumbran."
-        };
+  // Realizar lanzamiento de 3 monedas (I Ching tradicional)
+  async realizarLanzamiento3Monedas(userId: string): Promise<any> {
+    const coins = Array(3).fill(null).map(() => Math.random() > 0.5);
+    return this.realizarLanzamiento(userId, coins);
+  }
+
+  // Realizar lanzamiento de 4 monedas (sistema extendido)
+  async realizarLanzamiento4Monedas(userId: string): Promise<any> {
+    const coins = Array(4).fill(null).map(() => Math.random() > 0.5);
+    return this.realizarLanzamiento(userId, coins);
+  }
+
+  // Realizar secuencia de lanzamientos
+  async realizarSecuenciaLanzamientos(
+    userId: string, 
+    numLanzamientos: number, 
+    coinsPerLaunch: number
+  ): Promise<any> {
+    const resultados = [];
+    
+    for (let i = 0; i < numLanzamientos; i++) {
+      const coins = Array(coinsPerLaunch).fill(null).map(() => Math.random() > 0.5);
+      const resultado = await this.realizarLanzamiento(userId, coins);
+      resultados.push({
+        numero: i + 1,
+        ...resultado
+      });
+    }
+
+    // Guardar secuencia en base de datos
+    await this.prisma.launch.create({
+      data: {
+        id: this.generateId(),
+        userId: userId,
+        type: 'secuencia',
+        shortType: 'SEC',
+        hexResults: resultados.flatMap(r => r.coins.map(c => c ? '1' : '0')),
+        steps: resultados.length * coinsPerLaunch,
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
-      
-      // Seleccionar aleatoriamente uno de los resultados e interpretaciones
-      const indiceAleatorio = Math.floor(Math.random() * combinacion.resultados.length);
-      return {
-        resultado: combinacion.resultados[indiceAleatorio],
-        interpretacion: combinacion.interpretaciones[indiceAleatorio]
-      };
     });
-    
-    // Combinar los resultados individuales en un mensaje coherente
-    const resultadoCombinado = this.combinarResultados(resultadosIndividuales.map(r => r.resultado));
-    const interpretacionCombinada = this.combinarInterpretaciones(resultadosIndividuales.map(r => r.interpretacion));
-    
+
     return {
-      resultado: resultadoCombinado,
-      interpretacion: interpretacionCombinada
+      totalLanzamientos: numLanzamientos,
+      monedasPorLanzamiento: coinsPerLaunch,
+      resultados: resultados
     };
   }
 
-  // Función para combinar resultados individuales en un mensaje coherente
-  private combinarResultados(resultados: string[]): string {
-    // Aquí iría la lógica para combinar los resultados de cada lanzamiento
-    // en un mensaje coherente y fluido
-    
-    return `SECUENCIA CÓSMICA ÚNICA. Tu serie de lanzamientos revela un patrón divino especialmente diseñado para tu evolución actual. ${resultados[0]} ${resultados[2]} Además, ${resultados[4].toLowerCase()} Finalmente, ${resultados[6].toLowerCase()} Esta combinación única señala que estás en un punto de inflexión donde decisiones conscientes crearán olas de transformación en todos los aspectos de tu vida.`;
+  // Procesar diálogo abierto
+  async procesarDialogoAbierto(userId: string, coinPositions: number[][]): Promise<any> {
+    return await this.dialogoAbiertoService.procesarSecuenciaCompleta(coinPositions, userId);
   }
 
-  // Función para combinar interpretaciones individuales
-  private combinarInterpretaciones(interpretaciones: string[]): string {
-    // Lógica similar para combinar interpretaciones
-    
-    return `SÍNTESIS DE DONES ESPIRITUALES. Tu camino integra múltiples talentos: ${interpretaciones[0].toLowerCase()} ${interpretaciones[3].toLowerCase()} Además, ${interpretaciones[5].toLowerCase()} Esta combinación única de habilidades te posiciona como canal de energías raras y poderosas que pueden transformar realidades.`;
+  // Obtener historial de lanzamientos
+  async obtenerHistorialLanzamientos(userId: string, limit: number = 10): Promise<any> {
+    const lanzamientos = await this.prisma.launch.findMany({
+      where: { userId: userId },
+      orderBy: { createdAt: 'desc' },
+      take: limit
+    });
+
+    return lanzamientos.map(l => ({
+      id: l.id,
+      type: l.type,
+      fecha: l.createdAt,
+      resultado: l.hexResults
+    }));
   }
 
-  // Función principal para interpretar lanzamientos (manteniendo compatibilidad)
-  async interpretar(tiros: string, type: string, userId: string): Promise<any> {
-    try {
-      // Convertir el string de tiros a array de arrays booleanos
-      const secuencia = this.parsearTiros(tiros);
-      
-      // Obtener interpretación de la secuencia completa
-      const interpretacionCompleta = this.interpretarSecuencia(secuencia);
-      
-      // Obtener interpretaciones individuales para cada lanzamiento
-      const pasos: PasoResultado[] = [];
-      secuencia.forEach((lanzamiento, index) => {
-        const combinacion = this.combinaciones.find(c => 
-          c.coins.length === lanzamiento.length && 
-          c.coins.every((val, idx) => val === lanzamiento[idx])
-        );
-        
-        if (combinacion) {
-          const indiceAleatorio = Math.floor(Math.random() * combinacion.resultados.length);
-          pasos.push({
-            paso: index + 1,
-            combinacion: lanzamiento.map(val => val ? 'Cara' : 'Cruz').join(' - '),
-            resultado: combinacion.resultados[indiceAleatorio],
-            interpretacion: combinacion.interpretaciones[indiceAleatorio]
-          });
-        } else {
-          // Para combinaciones no definidas
-          pasos.push({
-            paso: index + 1,
-            combinacion: lanzamiento.map(val => val ? 'Cara' : 'Cruz').join(' - '),
-            resultado: "El universo te habla a través de esta combinación única. Tu camino es singular y no sigue patrones convencionales. Esta rareza es tu mayor don, permitiéndote acceso a dimensiones de conciencia poco exploradas.",
-            interpretacion: "Eres creador de nuevos patrones cósmicos. Donde otros siguen caminos trillados, tú abres sendero virgen. Esta capacidad de innovación espiritual es tu contribución única al tapiz colectivo de la evolución humana."
-          });
-        }
-      });
-      
-      // Seleccionar mensaje final aleatorio
-      const mensajeFinal = this.mensajesFinales[
-        Math.floor(Math.random() * this.mensajesFinales.length)
-      ];
-      
-      // Crear respuesta unificada
-      const parrafoUnificado = `${interpretacionCompleta.resultado} ${mensajeFinal}`;
-      
-      // Guardar en base de datos
-      const evaluation = await this.prisma.evaluation.create({
-        data: {
-          userId,
-          type,
-          result: parrafoUnificado,
-          throws: tiros,
-          fullResult: JSON.stringify({
-            parrafoUnificado,
-            mensajeFinal,
-            pasos,
-            interpretacionCompleta: interpretacionCompleta.interpretacion
-          })
-        }
-      });
-      
-      return {
-        success: true,
-        data: {
-          evaluationId: evaluation.id,
-          parrafoUnificado,
-          mensajeFinal,
-          pasos,
-          interpretacionCompleta: interpretacionCompleta.interpretacion
-        }
-      };
-      
-    } catch (error) {
-      console.error('Error en interpretar:', error);
-      throw new Error('Error interpreting throws');
-    }
-  }
-
-  // Función para parsear el string de tiros a array de arrays booleanos
-  private parsearTiros(tiros: string): boolean[][] {
-    // Implementar lógica para convertir el string a la estructura necesaria
-    // Esto depende de cómo se estén almacenando los tiros actualmente
-    
-    // Ejemplo de implementación (ajustar según formato real)
-    return tiros.split(';').map(tiro => 
-      tiro.split(',').map(val => val === 'true')
-    );
+  // Generar ID único
+  private generateId(): string {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 }

@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model espiritu {
@@ -34,19 +34,20 @@ model respuesta {
 }
 
 model usuario {
-  email              String              @unique(map: "email") @db.VarChar
-  password           String?             @db.VarChar
-  id                 String              @id @default(uuid())
-  isEmailVerified    Boolean             @default(false)
-  type               String              @db.VarChar
-  esencia            Float?
-  createdAt          DateTime            @default(now())
-  espiritu           espiritu[]
-  evaluacion_general evaluacion_general?
-  notificaciones     notificaciones[]
-  pregunta           pregunta[]
-  transferencia      transferencia[]
-  consultasOraculo   ConsultaOraculo[]   @relation("ConsultaOraculoToUsuario")
+  email                   String                    @unique(map: "email") @db.VarChar
+  password                String?                   @db.VarChar
+  id                      String                    @id @default(uuid())
+  isEmailVerified         Boolean                   @default(false)
+  type                    String                    @db.VarChar
+  esencia                 Float?
+  createdAt               DateTime                  @default(now())
+  hasSeenInstructions     Boolean                   @default(false)
+  ResultadoDialogoAbierto ResultadoDialogoAbierto[]
+  espiritu                espiritu[]
+  evaluacion_general      evaluacion_general?
+  notificaciones          notificaciones[]
+  pregunta                pregunta[]
+  transferencia           transferencia[]
 }
 
 model moneda {
@@ -62,22 +63,6 @@ model respuesta_dia {
 model respuesta_especial {
   id        String  @id @db.VarChar
   respuesta String? @db.VarChar
-}
-
-model ConsultaOraculo {
-  id               String   @id @default(cuid())
-  id_usuario       String
-  tipo             String
-  shortType        String
-  resultados       Json
-  mensajeFinal     String
-  parrafoUnificado String
-  fecha            DateTime @default(now())
-  
-  
-  usuario usuario @relation(fields: [id_usuario], references: [id], onDelete: Cascade, name: "ConsultaOraculoToUsuario")
-  
-  @@map("consultas_oraculo")
 }
 
 model esencia {
@@ -149,3 +134,75 @@ model notificaciones {
   usuario     usuario? @relation(fields: [id_usuario], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
+model launch {
+  id         String   @id
+  userId     String
+  type       String
+  shortType  String
+  hexResults String[]
+  steps      Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+}
+
+model message {
+  id         String   @id
+  type       String
+  segmentKey String
+  language   String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
+}
+
+model LanzamientoSistema {
+  id                 Int                @id @default(autoincrement())
+  secuencia          String             @db.VarChar(255)
+  resultado_numero   Int
+  resultado_texto    String
+  interpretacion     String
+  sistemaId          Int
+  createdAt          DateTime?          @default(now()) @db.Timestamp(6)
+  updatedAt          DateTime?          @default(now()) @db.Timestamp(6)
+  SistemaLanzamiento SistemaLanzamiento @relation(fields: [sistemaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([sistemaId, secuencia])
+}
+
+model ResultadoDialogoAbierto {
+  id             String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  usuarioId      String    @db.VarChar(255)
+  lanzamiento1   String    @db.VarChar(255)
+  lanzamiento2   String    @db.VarChar(255)
+  sistemaUsado   String    @db.VarChar(255)
+  resultados     Json
+  resultadoFinal String
+  createdAt      DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt      DateTime? @default(now()) @db.Timestamp(6)
+  usuario        usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model SistemaLanzamiento {
+  id                 Int                  @id @default(autoincrement())
+  codigo             String               @unique @db.VarChar(255)
+  nombre             String?              @db.VarChar(255)
+  descripcion        String?
+  createdAt          DateTime?            @default(now()) @db.Timestamp(6)
+  updatedAt          DateTime?            @default(now()) @db.Timestamp(6)
+  LanzamientoSistema LanzamientoSistema[]
+  Sistemita          Sistemita[]
+}
+
+model Sistemita {
+  id                 Int                @id @default(autoincrement())
+  numero             Int
+  secuencia          String             @db.VarChar(255)
+  resultado_texto    String
+  interpretacion     String
+  sistemaId          Int
+  createdAt          DateTime?          @default(now()) @db.Timestamp(6)
+  updatedAt          DateTime?          @default(now()) @db.Timestamp(6)
+  SistemaLanzamiento SistemaLanzamiento @relation(fields: [sistemaId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([sistemaId, numero, secuencia])
+}

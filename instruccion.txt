@@ -1,0 +1,176 @@
+Algoritmo ¨Modo Diálogo Abierto¨
+
+Asignación de números a las 4 posibilidades de caidas de las monedas para hacerlo todo más sencillo:
+
+1- Círculo grande blanco y Círculo pequeño blanco.
+2- Círculo pequeño blanco y Círculo grande negro
+3- Círculo pequeño negro y Círculo grande blanco
+4- Círculo pequeño negro y Círculo grande negro
+
+-Lo primero que va son 2 lanzamientos que determinan 16 posibilidades. Su objetivo es determinar la estructura de los otros lanzamientos. por ejemplo, así es como quedarían los primeros 16 lanzamientos:
+
+11 - Solamente se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta
+12 - Se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta. Y además se añadirá otro lanzamiento con 4 posibilidades llamado ¨Sistemita 1¨.
+13 - Solamente se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta
+14 - Se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta. Y además se añadirá otro lanzamiento con 4 posibilidades llamado ¨Sistemita 2¨. 
+
+21 - Solamente se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta
+22 - Se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta. Y además se añadirá otro lanzamiento con 4 posibilidades llamado ¨Sistemita 3¨.
+23 - Solamente se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta
+24 - Se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta. Y además se añadirá otro lanzamiento con 4 posibilidades llamado ¨Sistemita 4¨.
+
+31 - Solamente se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta
+32 - Se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta. Y además se añadirá otro lanzamiento con 4 posibilidades llamado ¨Sistemita 5¨.
+33 - Solamente se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta
+34 - Se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta. Y además se añadirá otro lanzamiento con 4 posibilidades llamado ¨Sistemita 6¨.
+
+41 - Solamente se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta
+42 - Se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta. Y además se añadirá otro lanzamiento con 4 posibilidades llamado ¨Sistemita 7¨.
+43 - Solamente se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta
+44 - Se tendrá en cuenta el sistema de 3 lanzamientos con 64 posibilidades que construye la respuesta. Y además se añadirá otro lanzamiento con 4 posibilidades llamado ¨Sistemita 8¨.
+
+-Osea que aunque son 16 posibilidades solo habrian 9 esquemas a escoger, ya que 8 te llevan al mismo. tendriamos en la base de datos un esquema de 3 lanzamientos con 64 posibilidades, y 8 esquemas que son, el mismo esquema de 3 lanzamientos con 64 posibilidades, pero que cada uno con un lanzamiento diferente al final, que agrega 4 posibilidades de texto a cada uno de los 8 esquemas, que son los Sistemitas del 1 al 8. Luego del usuario realizar los primeros 2 lanzamientos el algoritmo ya sabe si los proximos lanzamientos son 3 o son 4, si son 3, siempre es el mismo, y si son 4, es el mismo que el de 3 + 1.
+
+
+
+-los 3 lanzamientos que determinan 64 posibilidades:
+
+111- El resultado es 1.
+112- El resultado es 2.
+113- El resultado es 3.
+114- El resultado es 4.
+
+121- El resultado es 5.
+122- El resultado es 6. 
+123- El resultado es 7. 
+124- El resultado es 8. 
+
+131- El resultado es 9.
+132- El resultado es 10. 
+133- El resultado es 11. 
+134- El resultado es 12.
+
+141- El resultado es 13.
+142- El resultado es 14.
+143- El resultado es 15.
+144- El resultado es 16.
+
+211- El resultado es 17.
+212- El resultado es 18.
+213- El resultado es 19.
+214- El resultado es 20.
+
+221- El resultado es 21. 
+222- El resultado es 22.
+223- El resultado es 23.
+224- El resultado es 24.
+
+231- El resultado es 25.
+232- El resultado es 26.
+233- El resultado es 27.
+234- El resultado es 28.
+
+241- El resultado es 29.
+242- El resultado es 30.
+243- El resultado es 31.
+244- El resultado es 32.
+
+311- El resultado es 33.
+312- El resultado es 34.
+313- El resultado es 35.
+314- El resultado es 36.
+
+321- El resultado es 37.
+322- El resultado es 38.
+323- El resultado es 39.
+324- El resultado es 40.
+
+331- El resultado es 41.
+332- El resultado es 42.
+333- El resultado es 43.
+334- El resultado es 44.
+
+341- El resultado es 45.
+342- El resultado es 46.
+343- El resultado es 47.
+344- El resultado es 48.
+
+411- El resultado es 49.
+412- El resultado es 50.
+413- El resultado es 51.
+414- El resultado es 52.
+
+421- El resultado es 53.
+422- El resultado es 54. 
+423- El resultado es 55.
+424- El resultado es 56.
+
+431- El resultado es 57.
+432- El resultado es 58.
+433- El resultado es 59.
+434- El resultado es 60.
+
+441- El resultado es 61.
+442- El resultado es 62.
+443- El resultado es 63.
+444- El resultado es 64.
+
+
+
+-8 sistemitas de un lanzamiento, que cada 1 va detras de el sistema de 3 lanzaimentos, de tal forma que al Usuario le llega, o el sistema de 3 lanzamientos solo, o el sistema de 3 lanzamientos + 1 de los 8 sistemitas de un lanzamiento. Al decir sistemita de un lanzamiento me refiero a lo que anteriormente menciono como sistema de un lanzamiento de 4 posibilidades. Con los 8 esquemitas de un lanzamiento ya se completan los 9 esquemas a escoger a la hora de responder:
+
+Sistemita 1:
+
+1- s1 1
+2- s1 2
+3- s1 3
+4- s1 4
+
+Sistemita 2:
+
+1- s2 1
+2- s2 2
+3- s2 3
+4- s2 4
+
+Sistemita 3:
+
+1- s3 1 
+2- s3 2
+3- s3 3
+4- s3 4
+
+Sistemita 4:
+
+1- s4 1
+2- s4 2
+3- s4 3
+4- s4 4
+
+Sistemita 5:
+
+1- s5 1
+2- s5 2
+3- s5 3
+4- s5 4
+
+Sistemita 6:
+
+1- s6 1
+2- s6 2
+3- s6 3
+4- s6 4
+
+Sistemita 7:
+
+1- s7 1
+2- s7 2
+3- s7 3
+4- s7 4
+
+Sistemita 8:
+
+1- s8 1
+2- s8 2
+3- s8 3
+4- s8 4
