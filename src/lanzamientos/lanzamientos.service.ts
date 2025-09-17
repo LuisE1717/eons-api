@@ -459,7 +459,25 @@ export class LanzamientosService {
 
   // Procesar diálogo abierto
   async procesarDialogoAbierto(userId: string, coinPositions: number[][]): Promise<any> {
-    return await this.dialogoAbiertoService.procesarSecuenciaCompleta(coinPositions, userId);
+    try {
+      // Convertir las posiciones de monedas al formato esperado (1-4)
+      const lanzamientosConvertidos = coinPositions.map(coins => {
+        if (coins[0] === 1 && coins[1] === 1) return 1;
+        if (coins[0] === 1 && coins[1] === 0) return 2;
+        if (coins[0] === 0 && coins[1] === 1) return 3;
+        if (coins[0] === 0 && coins[1] === 0) return 4;
+        return 1; // Por defecto
+      });
+
+      // Procesar la secuencia completa
+      return await this.dialogoAbiertoService.procesarSecuenciaCompleta(
+        lanzamientosConvertidos,
+        userId
+      );
+    } catch (error) {
+      this.logger.error('Error en procesarDialogoAbierto:', error);
+      throw new BadRequestException('Error procesando el diálogo abierto');
+    }
   }
 
   // Obtener historial de lanzamientos
@@ -482,4 +500,27 @@ export class LanzamientosService {
   private generateId(): string {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  async obtenerResultadoPorId(userId: string, resultadoId: string): Promise<any> {
+    try {
+        const resultado = await this.prisma.resultadoDialogoAbierto.findFirst({
+        where: {
+            id: resultadoId,
+          usuarioId: userId,
+        }
+        });
+
+        if (!resultado) {
+        throw new Error('Resultado no encontrado');
+        }
+
+        return {
+        success: true,
+        data: resultado
+        };
+    } catch (error) {
+        console.error('Error obteniendo resultado:', error);
+        throw new Error('Error al obtener el resultado');
+    }
+    }
 }

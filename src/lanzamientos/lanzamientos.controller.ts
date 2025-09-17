@@ -1,4 +1,12 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
 import { LanzamientosService } from './lanzamientos.service';
 import { AccessGuard } from 'src/auth/auth.guard';
 
@@ -20,23 +28,23 @@ export class LanzamientosController {
   @Post('secuencia')
   async secuenciaLanzamientos(
     @Request() req,
-    @Body() body: { numLanzamientos: number; coinsPerLaunch: number }
+    @Body() body: { numLanzamientos: number; coinsPerLaunch: number },
   ) {
     return this.lanzamientosService.realizarSecuenciaLanzamientos(
       req.user.id,
       body.numLanzamientos,
-      body.coinsPerLaunch
+      body.coinsPerLaunch,
     );
   }
 
   @Post('dialogo-abierto')
   async dialogoAbierto(
     @Request() req,
-    @Body() body: { coinPositions: number[][] }
+    @Body() body: { coinPositions: number[][] },
   ) {
     return this.lanzamientosService.procesarDialogoAbierto(
       req.user.id,
-      body.coinPositions
+      body.coinPositions,
     );
   }
 
@@ -44,7 +52,13 @@ export class LanzamientosController {
   async obtenerHistorial(@Request() req, @Param('limit') limit?: number) {
     return this.lanzamientosService.obtenerHistorialLanzamientos(
       req.user.id,
-      limit ? parseInt(limit.toString()) : 10
+      limit ? parseInt(limit.toString()) : 10,
     );
+  }
+
+  // Nuevo endpoint para obtener resultado específico
+  @Get('resultado/:id')
+  async obtenerResultado(@Request() req, @Param('id') id: string) {
+    return this.lanzamientosService.obtenerResultadoPorId(req.user.id, id);
   }
 }
