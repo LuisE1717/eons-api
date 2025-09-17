@@ -168,7 +168,7 @@ export class AuthService {
       secret: jwtConstants.refreshSecret,
     });
     const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '6h',
+      expiresIn: '6h', // 6 horas en lugar de 24h para mejor seguridad
       secret: jwtConstants.accessSecret,
     });
 
