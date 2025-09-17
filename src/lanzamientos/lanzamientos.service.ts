@@ -461,32 +461,56 @@ export class LanzamientosService {
   // Procesar diálogo abierto
   async procesarDialogoAbierto(userId: string, coinPositions: number[][]): Promise<any> {
     try {
-      // Convertir las posiciones de monedas al formato esperado (1-4)
-      const lanzamientosConvertidos = coinPositions.map(coins => {
-        if (coins[0] === 1 && coins[1] === 1) return [1];
-        if (coins[0] === 1 && coins[1] === 0) return [2];
-        if (coins[0] === 0 && coins[1] === 1) return [3];
-        if (coins[0] === 0 && coins[1] === 0) return [4];
-        return [1]; // Por defecto
-      });
+        console.log('Procesando diálogo abierto para usuario:', userId);
+        console.log('Coin positions recibidas:', coinPositions);
+
+        // Verificar que tenemos al menos 5 lanzamientos (2 iniciales + 3 principales)
+        if (coinPositions.length < 5) {
+        throw new BadRequestException('Se requieren al menos 5 lanzamientos para el modo diálogo abierto');
+        }
+
+        // Convertir las posiciones de monedas al formato esperado (1-4)
+        const lanzamientosConvertidos = coinPositions.map(coins => {
+        console.log('Procesando coins:', coins);
+        
+        if (coins.length !== 2) {
+            throw new BadRequestException('Cada lanzamiento debe tener exactamente 2 monedas');
+        }
+
+        if (coins[0] === 1 && coins[1] === 1) return 1;
+        if (coins[0] === 1 && coins[1] === 0) return 2;
+        if (coins[0] === 0 && coins[1] === 1) return 3;
+        if (coins[0] === 0 && coins[1] === 0) return 4;
+        
+        return 1; // Por defecto
+        });
+
+        console.log('Lanzamientos convertidos:', lanzamientosConvertidos);
 
       // Procesar la secuencia completa
-      return await this.dialogoAbiertoService.procesarSecuenciaCompleta(
-        lanzamientosConvertidos,
-        userId
-      );
+      const resultado =
+        await this.dialogoAbiertoService.procesarSecuenciaCompleta(
+          lanzamientosConvertidos,
+          userId,
+        );
+
+        console.log('Resultado del procesamiento:', resultado);
+      return resultado;
     } catch (error) {
-      this.logger.error('Error en procesarDialogoAbierto:', error);
-      throw new BadRequestException('Error procesando el diálogo abierto');
+        console.error('Error en procesarDialogoAbierto:', error);
+        this.logger.error('Error detallado:', error.message, error.stack);
+      throw new BadRequestException(
+        error.message || 'Error procesando el diálogo abierto',
+      );
     }
-  }
+    }
 
   // Obtener historial de lanzamientos
   async obtenerHistorialLanzamientos(userId: string, limit: number = 10): Promise<any> {
     const lanzamientos = await this.prisma.launch.findMany({
       where: { userId: userId },
       orderBy: { createdAt: 'desc' },
-      take: limit
+      take: limit,
     });
 
     return lanzamientos.map(l => ({

@@ -94,67 +94,88 @@ export class DialogoAbiertoService {
   }
 
   // Procesar secuencia completa de lanzamientos
-  async procesarSecuenciaCompleta(lanzamientos: number[][], userId: string): Promise<any> {
-    if (lanzamientos.length < 5) {
-      throw new Error('Se requieren al menos 5 lanzamientos para el modo diálogo abierto');
-    }
-
-    // Primeros 2 lanzamientos determinan el sistema
-    const [lanz1, lanz2] = lanzamientos.slice(0, 2);
-    const lanzamiento1 = this.convertirCoinsANumero(lanz1);
-    const lanzamiento2 = this.convertirCoinsANumero(lanz2);
-    
-    const sistemaInfo = await this.determinarSistema(lanzamiento1, lanzamiento2);
-    
-    // Procesar los siguientes 3 lanzamientos
-    const lanzamientosSistema = lanzamientos.slice(2, 5);
-    const secuencia3 = lanzamientosSistema.map(l => this.convertirCoinsANumero(l)).join('');
-    
-    const resultadoPrincipal = await this.obtenerResultado3Lanzamientos(secuencia3);
-    
-    let resultadoFinal = resultadoPrincipal.resultadoTexto;
-    let interpretacionFinal = resultadoPrincipal.interpretacion;
-    let sistemitaResultado = null;
-
-    // Si necesita sistemita, procesar el lanzamiento adicional
-    if (sistemaInfo.necesitaSistemita && lanzamientos.length >= 6) {
-      const lanzamientoSistemita = lanzamientos[5];
-      const secuenciaSistemita = this.convertirCoinsANumero(lanzamientoSistemita).toString();
-      
-      sistemitaResultado = await this.obtenerSistemita(sistemaInfo.sistemitaNumero, secuenciaSistemita);
-      
-      resultadoFinal += ` ${sistemitaResultado.resultadoTexto}`;
-      interpretacionFinal += ` ${sistemitaResultado.interpretacion}`;
-    }
-
-    // Guardar resultado en base de datos
-    const resultadoGuardado = await this.prisma.resultadoDialogoAbierto.create({
-      data: {
-        usuarioId: userId,
-        lanzamiento1: `${lanzamiento1}${lanzamiento2}`,
-        lanzamiento2: secuencia3,
-        sistemaUsado: sistemaInfo.sistema,
-        resultados: {
-          principal: resultadoPrincipal,
-          sistemita: sistemitaResultado
-        },
-        resultadoFinal: resultadoFinal
-      }
-    });
-
-    return {
-      success: true,
-      data: {
-        id: resultadoGuardado.id,
-        resultadoFinal: resultadoFinal,
-        interpretacion: interpretacionFinal,
-        sistemaUsado: sistemaInfo.sistema,
-        detalles: {
-          principal: resultadoPrincipal,
-          sistemita: sistemitaResultado
+  async procesarSecuenciaCompleta(lanzamientos: number[], userId: string): Promise<any> {
+    try {
+        console.log('Procesando secuencia completa:', lanzamientos);
+        
+        if (lanzamientos.length < 5) {
+        throw new Error('Se requieren al menos 5 lanzamientos para el modo diálogo abierto');
         }
+
+        // Primeros 2 lanzamientos determinan el sistema
+        const lanzamiento1 = lanzamientos[0];
+        const lanzamiento2 = lanzamientos[1];
+        
+        console.log('Lanzamientos para determinar sistema:', lanzamiento1, lanzamiento2);
+        
+        const sistemaInfo = await this.determinarSistema(lanzamiento1, lanzamiento2);
+        console.log('Sistema determinado:', sistemaInfo);
+        
+        // Procesar los siguientes 3 lanzamientos (índices 2, 3, 4)
+        const lanzamientosSistema = lanzamientos.slice(2, 5);
+        const secuencia3 = lanzamientosSistema.join('');
+        
+        console.log('Secuencia de 3 lanzamientos:', secuencia3);
+        
+        const resultadoPrincipal = await this.obtenerResultado3Lanzamientos(secuencia3);
+        console.log('Resultado principal:', resultadoPrincipal);
+        
+        let resultadoFinal = resultadoPrincipal.resultadoTexto;
+        let interpretacionFinal = resultadoPrincipal.interpretacion;
+        let sistemitaResultado = null;
+
+        // Si necesita sistemita, procesar el lanzamiento adicional (índice 5)
+        if (sistemaInfo.necesitaSistemita && lanzamientos.length >= 6) {
+        const lanzamientoSistemita = lanzamientos[5];
+        const secuenciaSistemita = lanzamientoSistemita.toString();
+
+        console.log('Procesando sistemita:', sistemaInfo.sistemitaNumero, secuenciaSistemita);
+        
+        sistemitaResultado = await this.obtenerSistemita(sistemaInfo.sistemitaNumero, secuenciaSistemita);
+        console.log('Resultado del sistemita:', sistemitaResultado);
+
+        resultadoFinal += ` ${sistemitaResultado.resultadoTexto}`;
+        interpretacionFinal += ` ${sistemitaResultado.interpretacion}`;
       }
-    };
+
+      // Guardar resultado en base de datos
+      console.log('Guardando resultado en BD...');
+      const resultadoGuardado =
+        await this.prisma.resultadoDialogoAbierto.create({
+          data: {
+            usuarioId: userId,
+            lanzamiento1: `${lanzamiento1}${lanzamiento2}`,
+            lanzamiento2: secuencia3,
+            sistemaUsado: sistemaInfo.sistema,
+            resultadoFinal: resultadoFinal,
+            resultados: JSON.stringify({
+              principal: resultadoPrincipal,
+              sistemita: sistemitaResultado,
+              interpretacionFinal: interpretacionFinal // Guardar interpretación en el JSON
+            }),
+          },
+        });
+
+        console.log('Resultado guardado con ID:', resultadoGuardado.id);
+
+        return {
+        success: true,
+        data: {
+            id: resultadoGuardado.id,
+            resultadoFinal: resultadoFinal,
+            interpretacion: interpretacionFinal,
+            sistemaUsado: sistemaInfo.sistema,
+            detalles: {
+            principal: resultadoPrincipal,
+            sistemita: sistemitaResultado
+            }
+        }
+        };
+
+    } catch (error) {
+        console.error('Error en procesarSecuenciaCompleta:', error);
+        throw new Error(`Error procesando secuencia: ${error.message}`);
+    }
   }
 
   // Convertir array de coins a número (1-4)

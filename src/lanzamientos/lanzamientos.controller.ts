@@ -42,10 +42,21 @@ export class LanzamientosController {
     @Request() req,
     @Body() body: { coinPositions: number[][] },
   ) {
-    return this.lanzamientosService.procesarDialogoAbierto(
-      req.user.id,
-      body.coinPositions,
-    );
+    console.log('Request recibida en /dialogo-abierto');
+    console.log('User ID:', req.user.id);
+    console.log('Coin positions:', body.coinPositions);
+
+    try {
+      const result = await this.lanzamientosService.procesarDialogoAbierto(
+        req.user.id,
+        body.coinPositions,
+      );
+      console.log('Response enviada:', result);
+      return result;
+    } catch (error) {
+      console.error('Error en controller:', error);
+      throw error;
+    }
   }
 
   @Get('historial/:limit?')
