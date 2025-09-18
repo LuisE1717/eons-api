@@ -1,4 +1,4 @@
-// src/auth/auth.guard.ts
+// auth.guard.ts - CORREGIDO
 import {
   CanActivate,
   ExecutionContext,
@@ -9,6 +9,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { jwtConstants } from './constants/jwt.constant';
 
 @Injectable()
 export class AccessGuard implements CanActivate {
@@ -22,33 +23,45 @@ export class AccessGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
-    
+
     this.logger.debug(`🔐 Verificando token: ${token ? token.substring(0, 20) + '...' : 'No token'}`);
     
     if (!token) {
       this.logger.error('❌ Token no proporcionado');
       throw new UnauthorizedException('Token no proporcionado');
     }
-    
+
     try {
+      // Usar la constante correcta del secreto
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.JWT_SECRET,
+        secret: jwtConstants.accessSecret,
       });
+
+      this.logger.debug(`✅ Token payload: ${JSON.stringify(payload)}`);
       
-      this.logger.debug(`✅ Token válido para usuario: ${payload.sub}`);
+      // Verificar que el payload contiene el ID del usuario
+      if (!payload || (!payload.sub && !payload.id)) {
+        this.logger.error('❌ Token no contiene ID de usuario (sub o id)');
+        throw new UnauthorizedException('Token inválido: falta ID de usuario');
+      }
+      
+      // Usar 'sub' o 'id' según lo que contenga el token
+      const userId = payload.sub || payload.id;
+      
+      this.logger.debug(`✅ Token válido para usuario ID: ${userId}`);
       
       // Verificar que el usuario existe en la base de datos
       const user = await this.prisma.usuario.findUnique({
-        where: { id: payload.sub },
+        where: { id: userId },
       });
       
       if (!user) {
-        this.logger.error(`❌ Usuario no existe: ${payload.sub}`);
+        this.logger.error(`❌ Usuario no existe: ${userId}`);
         throw new UnauthorizedException('Usuario no existe');
       }
       
       request['user'] = {
-        id: payload.sub,
+        id: userId,
         email: payload.email,
         type: payload.type,
       };
@@ -61,6 +74,8 @@ export class AccessGuard implements CanActivate {
       if (error.name === 'TokenExpiredError') {
         throw new UnauthorizedException('Token expirado');
       } else if (error.name === 'JsonWebTokenError') {
+        // Error de firma inválida - podría ser secreto incorrecto
+        this.logger.error(`❌ Error de firma JWT. Verificar secreto: ${jwtConstants.accessSecret.substring(0, 5)}...`);
         throw new UnauthorizedException('Token inválido');
       } else {
         throw new UnauthorizedException('Token inválido o expirado');
@@ -75,7 +90,7 @@ export class AccessGuard implements CanActivate {
     if (!authHeader) {
       return undefined;
     }
-    
+
     const [type, token] = authHeader.split(' ');
     return type === 'Bearer' ? token : undefined;
   }

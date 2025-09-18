@@ -161,14 +161,20 @@ export class AuthService {
   }
 
   private async sendUser(user: usuario) {
-    const payload = { id: user.id, email: user.email };
+    const payload = {
+      sub: user.id,
+      id: user.id,
+      email: user.email,
+      type: user.type,
+    };
 
     const refreshToken = await this.jwtService.signAsync(payload, {
       expiresIn: '7d',
       secret: jwtConstants.refreshSecret,
     });
+
     const accessToken = await this.jwtService.signAsync(payload, {
-      expiresIn: '6h', // 6 horas en lugar de 24h para mejor seguridad
+      expiresIn: '6h',
       secret: jwtConstants.accessSecret,
     });
 
