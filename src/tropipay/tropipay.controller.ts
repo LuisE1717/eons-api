@@ -27,9 +27,13 @@ export class TropiPayController {
     private readonly usuarioService: UsuariosService,
     private readonly prisma: PrismaService,
   ) {}
+
+  // Configuración actualizada para API v3
   config = {
     clientId: process.env.TROPIPAY_CLIENT_ID,
     clientSecret: process.env.TROPIPAY_CLIENT_SECRET,
+    baseUrl: 'https://www.tropipay.com', 
+    apiVersion: 'v3',
     scopes: [
       'ALLOW_GET_PROFILE_DATA',
       'ALLOW_PAYMENT_IN',
@@ -65,25 +69,25 @@ export class TropiPayController {
         descripcion: esencia.descripcion,
         precio: Number(esencia.precio) * 100,
       };
+      
+      // Payload actualizado para API v3
       return await this.tpp.paymentCards.create({
         reference: ref,
         concept: 'de Esencia',
-        favorite: true,
         description: payload.descripcion,
         amount: payload.precio,
         currency: 'EUR',
-        singleUse: true,
-        reasonId: 4,
-        expirationDays: 1,
+        single_use: true, // Cambiado a snake_case para v3
+        reason_id: 4, // Cambiado a snake_case para v3
+        expiration_days: 1, // Cambiado a snake_case para v3
         lang: lang || 'en',
-        urlSuccess: 'https://www.eons.es/payment',
-        urlFailed: 'https://www.eons.es/payment/failed',
-        urlNotification:
-          'https://eons-services.onrender.com/tropipay/',
-        serviceDate: formattedDateTime,
-        client: null,
-        directPayment: true,
-        paymentMethods: ['EXT', 'TPP'],
+        success_url: 'https://www.eons.es/payment', // Cambiado para v3
+        fail_url: 'https://www.eons.es/payment/failed', // Cambiado para v3
+        notification_url: 'https://eons-services.onrender.com/tropipay/', // Cambiado para v3
+        service_date: formattedDateTime, // Cambiado a snake_case para v3
+        direct_payment: true, // Cambiado a snake_case para v3
+        payment_methods: ['EXT', 'TPP'], // Cambiado a snake_case para v3
+        // Eliminado 'favorite' y 'client' si no son compatibles con v3
       });
     } catch (error) {
       console.log(error)
@@ -111,29 +115,27 @@ export class TropiPayController {
       const ref = (await this.usuarioService.getUsuarioById(req.user.id)).email;
       const payload = {
         descripcion: `${datah.esencia} de Esencia`,
-
         precio: datah.precio * 100,
       };
+
+      // Payload actualizado para API v3
       return await this.tpp.paymentCards.create({
         reference: ref,
         concept: 'Esencia',
-        favorite: true,
         description: payload.descripcion,
         amount: payload.precio,
         currency: 'EUR',
-        singleUse: true,
-        reasonId: 4,
-        expirationDays: 1,
+        single_use: true,
+        reason_id: 4,
+        expiration_days: 1,
         lang: 'es',
-        urlSuccess: 'https://www.eons.es/payment',
-        urlFailed: 'https://www.eons.es/payment/failed',
-        urlNotification:
+        success_url: 'https://www.eons.es/payment',
+        fail_url: 'https://www.eons.es/payment/failed',
+        notification_url:
           'https://webhook.site/c43d202f-2571-4a6c-af46-e2a3ca539851',
-        //'https://eons-services.onrender.com/tropipay/',
-        serviceDate: formattedDateTime,
-        client: null,
-        directPayment: true,
-        paymentMethods: ['EXT', 'TPP'],
+        service_date: formattedDateTime,
+        direct_payment: true,
+        payment_methods: ['EXT', 'TPP'],
       });
     } catch (error) {
       if (error?.error?.message == 'Card credit cashin limit exceded')
@@ -143,47 +145,49 @@ export class TropiPayController {
 
   @Post()
   async validateSignature(@Body() data) {
-    //console.log(data.data.bankOrderCode);
-    const { bankOrderCode, originalCurrencyAmount, signaturev2 } = data.data;
-    //console.log(signaturev2);
+    // Lógica de validación actualizada para v3
+    const { bank_order_code, amount, signature } = data.data; // Campos actualizados para v3
+    
     const clientId = process.env.TROPIPAY_CLIENT_ID;
     const clientSecret = process.env.TROPIPAY_CLIENT_SECRET;
 
-    const messageToSign = `${bankOrderCode}${clientId}${clientSecret}${originalCurrencyAmount}`;
-
+    // Firma actualizada para v3
+    const messageToSign = `${bank_order_code}${clientId}${clientSecret}${amount}`;
     const expectedSignature = sha256(messageToSign);
-    //console.log(expectedSignature);
 
-    if (expectedSignature === signaturev2) {
+    if (expectedSignature === signature) {
       let epay = 0;
-      if (data.data.paymentcard.amount === 499) {
+      const paymentAmount = data.data.amount; // Campo actualizado
+      
+      if (paymentAmount === 499) {
         epay = 5;
-      } else if (data.data.paymentcard.amount === 1440) {
+      } else if (paymentAmount === 1440) {
         epay = 15;
-      } else if (data.data.paymentcard.amount === 2350) {
+      } else if (paymentAmount === 2350) {
         epay = 25;
-      } else if (data.data.paymentcard.amount === 4599) {
+      } else if (paymentAmount === 4599) {
         epay = 50;
-      } else if (data.data.paymentcard.amount === 8999) {
+      } else if (paymentAmount === 8999) {
         epay = 100;
-      } else if (data.data.paymentcard.amount === 21250) {
+      } else if (paymentAmount === 21250) {
         epay = 250;
-      }else if (data.data.paymentcard.amount === 71999) {
+      } else if (paymentAmount === 71999) {
         epay = 1000;
-      }else if (data.data.paymentcard.amount === 174999) {
+      } else if (paymentAmount === 174999) {
         epay = 2500;
-      }
-      else {
-        const match = data.data.paymentcard.description.match(/\d+/);
+      } else {
+        const match = data.data.description.match(/\d+/);
         epay = match ? parseInt(match[0], 10) : null;
       }
+      
       const user = this.usuarioService.findOneByEmail(data.data.reference);
       (await user).esencia = (await user).esencia + epay;
       this.usuarioService.updateUsuario(await user, (await user).id);
+      
       return this.prisma.compra.create({
         data: {
           email: data.data.reference,
-          bank_order: data.data.bankOrderCode,
+          bank_order: data.data.bank_order_code, // Campo actualizado
         },
       });
     } else {

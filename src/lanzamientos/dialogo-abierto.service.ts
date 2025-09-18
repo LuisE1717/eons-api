@@ -99,82 +99,80 @@ export class DialogoAbiertoService {
         console.log('Procesando secuencia completa:', lanzamientos);
         
         if (lanzamientos.length < 5) {
-        throw new Error('Se requieren al menos 5 lanzamientos para el modo diálogo abierto');
+            throw new Error('Se requieren al menos 5 lanzamientos para el modo diálogo abierto');
         }
 
         // Primeros 2 lanzamientos determinan el sistema
-        const lanzamiento1 = lanzamientos[0];
-        const lanzamiento2 = lanzamientos[1];
+        const primerLanzamiento = lanzamientos[0];
+        const segundoLanzamiento = lanzamientos[1];
         
-        console.log('Lanzamientos para determinar sistema:', lanzamiento1, lanzamiento2);
+        console.log('Lanzamientos para determinar sistema:', primerLanzamiento, segundoLanzamiento);
         
-        const sistemaInfo = await this.determinarSistema(lanzamiento1, lanzamiento2);
+        const sistemaInfo = await this.determinarSistema(primerLanzamiento, segundoLanzamiento);
         console.log('Sistema determinado:', sistemaInfo);
         
-        // Procesar los siguientes 3 lanzamientos (índices 2, 3, 4)
-        const lanzamientosSistema = lanzamientos.slice(2, 5);
-        const secuencia3 = lanzamientosSistema.join('');
+        // CORRECCIÓN: Usar los lanzamientos 2, 3, 4 (índices 1, 2, 3)
+        const lanzamientosPrincipales = lanzamientos.slice(1, 4);
+        const secuenciaPrincipal = lanzamientosPrincipales.join('');
         
-        console.log('Secuencia de 3 lanzamientos:', secuencia3);
+        console.log('Secuencia de 3 lanzamientos principales:', secuenciaPrincipal);
         
-        const resultadoPrincipal = await this.obtenerResultado3Lanzamientos(secuencia3);
+        const resultadoPrincipal = await this.obtenerResultado3Lanzamientos(secuenciaPrincipal);
         console.log('Resultado principal:', resultadoPrincipal);
         
         let resultadoFinal = resultadoPrincipal.resultadoTexto;
         let interpretacionFinal = resultadoPrincipal.interpretacion;
         let sistemitaResultado = null;
 
-        // Si necesita sistemita, procesar el lanzamiento adicional (índice 5)
+        // Si necesita sistemita, procesar el lanzamiento adicional (índice 4)
         if (sistemaInfo.necesitaSistemita && lanzamientos.length >= 6) {
-        const lanzamientoSistemita = lanzamientos[5];
-        const secuenciaSistemita = lanzamientoSistemita.toString();
+            const lanzamientoSistemita = lanzamientos[4]; // Índice 4, no 5
+            const secuenciaSistemita = lanzamientoSistemita.toString();
 
-        console.log('Procesando sistemita:', sistemaInfo.sistemitaNumero, secuenciaSistemita);
-        
-        sistemitaResultado = await this.obtenerSistemita(sistemaInfo.sistemitaNumero, secuenciaSistemita);
-        console.log('Resultado del sistemita:', sistemitaResultado);
+            console.log('Procesando sistemita:', sistemaInfo.sistemitaNumero, secuenciaSistemita);
+            
+            sistemitaResultado = await this.obtenerSistemita(sistemaInfo.sistemitaNumero, secuenciaSistemita);
+            console.log('Resultado del sistemita:', sistemitaResultado);
 
-        resultadoFinal += ` ${sistemitaResultado.resultadoTexto}`;
-        interpretacionFinal += ` ${sistemitaResultado.interpretacion}`;
-      }
+            resultadoFinal += ` ${sistemitaResultado.resultadoTexto}`;
+            interpretacionFinal += ` ${sistemitaResultado.interpretacion}`;
+        }
 
-      // Guardar resultado en base de datos
-      console.log('Guardando resultado en BD...');
-      const resultadoGuardado =
-        await this.prisma.resultadoDialogoAbierto.create({
-          data: {
+        // Guardar resultado en base de datos
+        console.log('Guardando resultado en BD...');
+        const resultadoGuardado = await this.prisma.resultadoDialogoAbierto.create({
+            data: {
             usuarioId: userId,
-            lanzamiento1: `${lanzamiento1}${lanzamiento2}`,
-            lanzamiento2: secuencia3,
+            lanzamiento1: `${primerLanzamiento}${segundoLanzamiento}`, // Código del sistema
+            lanzamiento2: secuenciaPrincipal, // Secuencia principal
             sistemaUsado: sistemaInfo.sistema,
             resultadoFinal: resultadoFinal,
             resultados: JSON.stringify({
-              principal: resultadoPrincipal,
-              sistemita: sistemitaResultado,
-              interpretacionFinal: interpretacionFinal // Guardar interpretación en el JSON
+                principal: resultadoPrincipal,
+                sistemita: sistemitaResultado,
+                interpretacionFinal: interpretacionFinal
             }),
-          },
+            },
         });
 
         console.log('Resultado guardado con ID:', resultadoGuardado.id);
 
-        return {
+      return {
         success: true,
         data: {
-            id: resultadoGuardado.id,
-            resultadoFinal: resultadoFinal,
-            interpretacion: interpretacionFinal,
-            sistemaUsado: sistemaInfo.sistema,
-            detalles: {
+          id: resultadoGuardado.id,
+          resultadoFinal: resultadoFinal,
+          interpretacion: interpretacionFinal,
+          sistemaUsado: sistemaInfo.sistema,
+          detalles: {
             principal: resultadoPrincipal,
-            sistemita: sistemitaResultado
-            }
-        }
-        };
-
+            sistemita: sistemitaResultado,
+          },
+        },
+      };
     } catch (error) {
-        console.error('Error en procesarSecuenciaCompleta:', error);
-        throw new Error(`Error procesando secuencia: ${error.message}`);
+      console.error('Error en procesarSecuenciaCompleta:', error);
+      throw new Error(`Error procesando secuencia: ${error.message}`);
     }
   }
 
