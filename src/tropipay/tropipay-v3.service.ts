@@ -18,8 +18,8 @@ export class TropiPayV3Service {
         this.httpService.post(
           'https://www.tropipay.com/api/v3/access/token',
           {
-            client_id: process.env.TROPIPAY_CLIENT_ID,
-            client_secret: process.env.TROPIPAY_CLIENT_SECRET,
+            client_id: process.env.TROPIPAY_CLIENT_ID?.trim(),
+            client_secret: process.env.TROPIPAY_CLIENT_SECRET?.trim(),
             grant_type: 'client_credentials',
             scope: 'ALLOW_EXTERNAL_CHARGE ALLOW_GET_PROFILE_DATA ALLOW_PAYMENT_IN KYC3_FULL_ALLOW ALLOW_GET_BALANCE ALLOW_GET_MOVEMENT_LIST'
           },

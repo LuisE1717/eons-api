@@ -10,7 +10,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { TropiPayService } from './tropipay.service';
-import { TropiPayV3Service } from './tropipay-v3.service'; // ✅ Nuevo servicio
+import { TropiPayV3Service } from './tropipay-v3.service';
 import { EsenciasService } from 'src/esencia/esencia.service';
 import { sha256 } from 'js-sha256';
 import { UsuariosService } from 'src/usuario/usuario.service';
@@ -42,31 +42,30 @@ export class TropiPayController {
       this.logger.log(`Creating payment for esencia ID: ${id}, user: ${req.user.id}`);
       
       const date = new Date();
-      const formattedDateTime = date.toISOString(); // ✅ Usar formato ISO para la fecha
+      const formattedDateTime = date.toISOString();
       
       const user = await this.usuarioService.getUsuarioById(req.user.id);
       const esencia = await this.esenciaService.getEsenciaById(Number(id));
       
       this.logger.log(`User: ${user.email}, Esencia: ${esencia.descripcion}, Price: ${esencia.precio}`);
       
-      // ✅ PAYLOAD EN CAMELCASE (TropiPay v3 lo espera así)
       const payload = {
         reference: user.email,
         concept: 'Compra de Esencia',
         description: esencia.descripcion,
         amount: Math.round(Number(esencia.precio) * 100),
         currency: 'EUR',
-        singleUse: true, // ← camelCase
-        reasonId: 4, // ← camelCase
-        expirationDays: 1, // ← camelCase
-        favorite: true, // ← Agregar este campo que pide TropiPay
+        singleUse: true,
+        reasonId: 4,
+        expirationDays: 1,
+        favorite: true,
         lang: lang || 'es',
-        successUrl: 'https://www.eons.es/payment', // ← camelCase
-        failUrl: 'https://www.eons.es/payment/failed', // ← camelCase
-        notificationUrl: 'https://eons-services.onrender.com/tropipay/', // ← camelCase
-        serviceDate: formattedDateTime, // ← camelCase + formato ISO
-        directPayment: true, // ← camelCase
-        paymentMethods: ['EXT', 'TPP'], // ← camelCase
+        successUrl: 'https://www.eons.es/payment/success',
+        failUrl: 'https://www.eons.es/payment/failed',
+        notificationUrl: 'https://api.eons.es/tropipay/webhook',
+        serviceDate: formattedDateTime,
+        directPayment: true,
+        paymentMethods: ['EXT', 'TPP'],
       };
 
       this.logger.log('Sending payload to TropiPay:', JSON.stringify(payload, null, 2));
@@ -98,28 +97,27 @@ export class TropiPayController {
   ) {
     try {
       const date = new Date();
-      const formattedDateTime = date.toISOString(); // ✅ Formato ISO
+      const formattedDateTime = date.toISOString();
       
       const user = await this.usuarioService.getUsuarioById(req.user.id);
       
-      // ✅ PAYLOAD EN CAMELCASE
       const payload = {
         reference: user.email,
         concept: 'Esencia',
         description: `${datah.esencia} de Esencia`,
         amount: datah.precio * 100,
         currency: 'EUR',
-        singleUse: true, // ← camelCase
-        reasonId: 4, // ← camelCase
-        expirationDays: 1, // ← camelCase
-        favorite: true, // ← Agregar este campo
+        singleUse: true,
+        reasonId: 4,
+        expirationDays: 1,
+        favorite: true,
         lang: 'es',
-        successUrl: 'https://www.eons.es/payment', // ← camelCase
-        failUrl: 'https://www.eons.es/payment/failed', // ← camelCase
-        notificationUrl: 'https://webhook.site/c43d202f-2571-4a6c-af46-e2a3ca539851',
-        serviceDate: formattedDateTime, // ← camelCase + formato ISO
-        directPayment: true, // ← camelCase
-        paymentMethods: ['EXT', 'TPP'], // ← camelCase
+        successUrl: 'https://www.eons.es/payment/success',
+        failUrl: 'https://www.eons.es/payment/failed',
+        notificationUrl: 'https://api.eons.es/tropipay/webhook',
+        serviceDate: formattedDateTime,
+        directPayment: true,
+        paymentMethods: ['EXT', 'TPP'],
       };
 
       const result = await this.tropiPayV3Service.createPaymentLink(payload);
@@ -134,13 +132,17 @@ export class TropiPayController {
     }
   }
 
+  @Post('webhook')
+  async handleWebhook(@Body() data: any) {
+    this.logger.log('Webhook received from TropiPay:', JSON.stringify(data, null, 2));
+    return await this.validateSignature(data);
+  }
+
   @Post()
   async validateSignature(@Body() data: any) {
     try {
-      // ⚠️ IMPORTANTE: La respuesta de TropiPay v3 puede venir en camelCase
       console.log('Datos recibidos de TropiPay:', JSON.stringify(data, null, 2));
       
-      // Prueba con ambos formatos (camelCase y snake_case)
       const bankOrderCode = data.data?.bankOrderCode || data.data?.bank_order_code;
       const amount = data.data?.amount || data.data?.originalCurrencyAmount;
       const signature = data.data?.signature || data.data?.signaturev2;
@@ -149,10 +151,13 @@ export class TropiPayController {
         throw new BadRequestException('Datos de pago incompletos');
       }
       
-      const clientId = process.env.TROPIPAY_CLIENT_ID;
-      const clientSecret = process.env.TROPIPAY_CLIENT_SECRET;
+      const clientId = process.env.TROPIPAY_CLIENT_ID?.trim();
+      const clientSecret = process.env.TROPIPAY_CLIENT_SECRET?.trim();
 
-      // ✅ Firma actualizada
+      if (!clientId || !clientSecret) {
+        throw new BadRequestException('TropiPay credentials not configured');
+      }
+
       const messageToSign = `${bankOrderCode}${clientId}${clientSecret}${amount}`;
       const expectedSignature = sha256(messageToSign);
 

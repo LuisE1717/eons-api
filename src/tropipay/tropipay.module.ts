@@ -10,12 +10,12 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { TranslationService } from 'src/translation/translation.service';
-import { TropiPayV3Service } from './tropipay-v3.service'; // ✅ Nuevo servicio
+import { TropiPayV3Service } from './tropipay-v3.service';
 
 @Module({
   providers: [
     TropiPayService,
-    TropiPayV3Service, // ✅ Agregar nuevo servicio
+    TropiPayV3Service,
     EsenciasService,
     UsuariosService,
     WebsocketGateway,
