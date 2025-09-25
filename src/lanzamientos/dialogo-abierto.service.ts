@@ -43,9 +43,23 @@ export class DialogoAbiertoService {
     resultadoTexto: string;
     interpretacion: string;
   }> {
+    // Primero obtener el sistema por su código
+    const sistema = await this.prisma.sistema.findFirst({
+      where: { codigo: 'sistema_principal' }
+    });
+
+    if (!sistema) {
+      // Resultado por defecto si no se encuentra el sistema
+      return {
+        resultadoNumero: 1,
+        resultadoTexto: "El universo se encuentra en un estado de fluir constante. Tus energías se alinean con las fuerzas cósmicas, indicando un período de transformación y crecimiento. Confía en el proceso y mantén tu corazón abierto a las señales que el cosmos te envía.",
+        interpretacion: "Este patrón sugiere que estás en sintonía con el flujo universal. Las oportunidades se presentarán de manera natural si mantienes una actitud receptiva y positiva."
+      };
+    }
+
     const resultado = await this.prisma.lanzamientoSistema.findFirst({
       where: {
-        sistema: { codigo: 'sistema_principal' },
+        sistemaId: sistema.id,
         secuencia: secuencia
       }
     });
@@ -71,9 +85,22 @@ export class DialogoAbiertoService {
     resultadoTexto: string;
     interpretacion: string;
   }> {
+    // Primero obtener el sistema por su código
+    const sistema = await this.prisma.sistema.findFirst({
+      where: { codigo: 'sistema_principal' }
+    });
+
+    if (!sistema) {
+      // Resultado por defecto
+      return {
+        resultadoTexto: "El sistemita adicional revela capas profundas de tu conexión cósmica. Información adicional se está desplegando para guiarte en tu camino actual.",
+        interpretacion: "Este sistemita complementario enfatiza la necesidad de prestar atención a los detalles y señales sutiles en tu entorno."
+      };
+    }
+
     const sistemita = await this.prisma.sistemita.findFirst({
       where: {
-        sistema: { codigo: 'sistema_principal' },
+        sistemaId: sistema.id,
         numero: numero,
         secuencia: secuencia
       }
