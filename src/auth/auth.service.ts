@@ -22,7 +22,13 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly isDevelopment = true; // Forzar desarrollo
+  private readonly isDevelopment = process.env.NODE_ENV === 'development';
+  private readonly frontendUrl = this.isDevelopment 
+    ? 'http://localhost:4321' 
+    : 'https://eons.es';
+  private readonly backendUrl = this.isDevelopment 
+    ? 'http://localhost:3000' 
+    : 'https://api.eons.es';
 
   constructor(
     private readonly userService: UsuariosService,
@@ -210,8 +216,8 @@ export class AuthService {
       },
     );
 
-    // URLs de desarrollo forzadas
-    const resetUrl = `http://localhost:4321/auth/change-password/${token}/${email}`;
+    // URL dinámica según el entorno
+    const resetUrl = `${this.frontendUrl}/auth/change-password/${token}/${email}`;
     
 
     if(lang == 'es'){
@@ -302,8 +308,8 @@ export class AuthService {
       secret: jwtConstants.accessSecret,
     });
 
-    // URL de desarrollo forzada
-    const resetUrl = `http://localhost:3000/auth/verify-email/?token=${token}`;
+    // URL dinámica según el entorno
+    const resetUrl = `${this.backendUrl}/auth/verify-email/?token=${token}`;
 
 
     if(lang == 'es'){
