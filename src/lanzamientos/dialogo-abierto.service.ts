@@ -43,8 +43,8 @@ export class DialogoAbiertoService {
     resultadoTexto: string;
     interpretacion: string;
   }> {
-    // Primero obtener el sistema por su código
-    const sistema = await this.prisma.sistema.findFirst({
+    // Primero obtener el sistema por su código - CORREGIDO: usar SistemaLanzamiento
+    const sistema = await this.prisma.sistemaLanzamiento.findFirst({
       where: { codigo: 'sistema_principal' }
     });
 
@@ -85,8 +85,8 @@ export class DialogoAbiertoService {
     resultadoTexto: string;
     interpretacion: string;
   }> {
-    // Primero obtener el sistema por su código
-    const sistema = await this.prisma.sistema.findFirst({
+    // Primero obtener el sistema por su código - CORREGIDO: usar SistemaLanzamiento
+    const sistema = await this.prisma.sistemaLanzamiento.findFirst({
       where: { codigo: 'sistema_principal' }
     });
 
