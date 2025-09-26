@@ -216,7 +216,7 @@ export class AuthService {
       },
     );
 
-    // URL dinámica según el entorno
+    // URL dinámica según el entorno - CORREGIDO
     const resetUrl = `${this.frontendUrl}/auth/change-password/${token}/${email}`;
     
 
@@ -308,7 +308,7 @@ export class AuthService {
       secret: jwtConstants.accessSecret,
     });
 
-    // URL dinámica según el entorno
+    // URL dinámica según el entorno - CORREGIDO
     const resetUrl = `${this.backendUrl}/auth/verify-email/?token=${token}`;
 
 

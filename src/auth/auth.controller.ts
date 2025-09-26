@@ -93,8 +93,8 @@ export class AuthController {
     
     if (!token) {
       this.logger.error('❌ No token provided in query parameters');
-      // Redirección dinámica según el entorno
-      return res.redirect(`${this.frontendUrl}/email-verification?error=no_token`);
+      // Redirección dinámica según el entorno - CORREGIDO
+      return res.redirect(`${this.frontendUrl}/auth/email-verification?error=no_token`);
     }
 
     try {
@@ -102,16 +102,16 @@ export class AuthController {
       this.logger.debug(`✅ Verification result: ${JSON.stringify(result)}`);
       
       if (result.success) {
-        // Redirección dinámica a verification-success
-        return res.redirect(`${this.frontendUrl}/verification-success?success=true`);
+        // Redirección dinámica a verification-success - CORREGIDO
+        return res.redirect(`${this.frontendUrl}/auth/verification-success?success=true`);
       } else {
-        // Redirección dinámica con error
-        return res.redirect(`${this.frontendUrl}/email-verification?error=${encodeURIComponent(result.message)}`);
+        // Redirección dinámica con error - CORREGIDO
+        return res.redirect(`${this.frontendUrl}/auth/email-verification?error=${encodeURIComponent(result.message)}`);
       }
     } catch (error) {
       this.logger.error(`❌ Error in verify-email endpoint: ${error.message}`, error.stack);
-      // Redirección dinámica con error
-      return res.redirect(`${this.frontendUrl}/email-verification?error=${encodeURIComponent(error.message)}`);
+      // Redirección dinámica con error - CORREGIDO
+      return res.redirect(`${this.frontendUrl}/auth/email-verification?error=${encodeURIComponent(error.message)}`);
     }
   }
 
