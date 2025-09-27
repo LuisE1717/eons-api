@@ -25,6 +25,7 @@ async function bootstrap() {
       'http://localhost:5173', // Desarrollo alternativo
       'https://eons.es', // ✅ Dominio de producción
       'https://www.eons.es', // ✅ Versión con www
+      'https://api.eons.es',
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
