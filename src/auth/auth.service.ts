@@ -39,34 +39,54 @@ export class AuthService {
   ) {}
 
   async register({ email, password, type }: RegisterDto) {
-    let user = await this.userService.findOneByEmail(email);
+    // Verificar si el usuario ya existe
+    const existingUser = await this.userService.findOneByEmail(email);
 
-    if(user){
-      const isPasswordValid = await bcryptjs.compare(password, user?.password)
-      if (isPasswordValid) {
-        return this.sendUser(user);
-      }
-      else {
-        throw new UnauthorizedException('User Alredy exist')
-      }
+    if (existingUser) {
+        // Si el usuario existe, verificar si la contraseña coincide
+        const isPasswordValid = await bcryptjs.compare(password, existingUser.password);
+        
+        if (!isPasswordValid) {
+            throw new BadRequestException('An account with this email already exists');
+        }
+        
+        // Si la contraseña coincide, permitir el "login" (usuario que ya estaba registrado)
+        this.logger.log(`User ${email} already exists, returning credentials`);
+        return this.sendUser(existingUser);
     }
 
-    user = await this.userService.createUsuario({
-      email,
-      password: await bcryptjs.hash(password, 10),
-      type,
-      esencia:0
-    });
-
-    // Enviar email de verificación automáticamente después del registro
+    // Crear nuevo usuario
+    const hashedPassword = await bcryptjs.hash(password, 10);
+    
     try {
-      await this.sendVerificationEmail(email, 'es');
-    } catch (error) {
-      this.logger.error('Error sending verification email:', error);
-      // No lanzar error para no interrumpir el registro
-    }
+        const user = await this.userService.createUsuario({
+            email,
+            password: hashedPassword,
+            type,
+            esencia: 0,
+            isEmailVerified: false // Asegurar que esté false inicialmente
+        });
 
-    return this.sendUser(user);
+        // Enviar email de verificación
+        try {
+            await this.sendVerificationEmail(email, 'es');
+            this.logger.log(`Verification email sent to ${email}`);
+        } catch (emailError) {
+            this.logger.error('Error sending verification email:', emailError);
+            // No interrumpir el registro si falla el email
+        }
+
+        return this.sendUser(user);
+    } catch (error) {
+        this.logger.error(`Error creating user ${email}:`, error);
+        
+        // Manejar error de duplicado de base de datos
+        if (error.code === 'P2002') { // Código de error de Prisma para unique constraint
+            throw new BadRequestException('An account with this email already exists');
+        }
+        
+        throw new BadRequestException('Error creating user account');
+    }
   }
 
   async resetPassword({ newPassword }: ResetPasswordDto, email: string) {

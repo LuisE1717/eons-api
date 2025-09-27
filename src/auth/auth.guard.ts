@@ -24,11 +24,11 @@ export class AccessGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
 
-    this.logger.debug(`🔐 Verificando token: ${token ? token.substring(0, 20) + '...' : 'No token'}`);
+    this.logger.debug(`🔐 Verificando token para IP: ${request.ip}, User-Agent: ${request.headers['user-agent']}`);
     
     if (!token) {
-      this.logger.error('❌ Token no proporcionado');
-      throw new UnauthorizedException('Token no proporcionado');
+      this.logger.error(`❌ Token no proporcionado desde IP: ${request.ip}`);
+      throw new UnauthorizedException('Authentication token required');
     }
 
     try {
@@ -40,7 +40,7 @@ export class AccessGuard implements CanActivate {
       this.logger.debug(`✅ Token payload: ${JSON.stringify(payload)}`);
       
       // Verificar que el payload contiene el ID del usuario
-      if (!payload || (!payload.sub && !payload.id)) {
+      if (!payload || (typeof payload.sub === 'undefined' && typeof payload.id === 'undefined')) {
         this.logger.error('❌ Token no contiene ID de usuario (sub o id)');
         throw new UnauthorizedException('Token inválido: falta ID de usuario');
       }
@@ -53,6 +53,7 @@ export class AccessGuard implements CanActivate {
       // Verificar que el usuario existe en la base de datos
       const user = await this.prisma.usuario.findUnique({
         where: { id: userId },
+        select: { id: true, email: true, isEmailVerified: true, type: true }
       });
       
       if (!user) {
@@ -69,7 +70,7 @@ export class AccessGuard implements CanActivate {
       this.logger.debug(`✅ Autenticación exitosa para: ${payload.email}`);
       
     } catch (error) {
-      this.logger.error(`❌ Error de autenticación: ${error.message}`);
+      this.logger.error(`❌ Error de autenticación: ${error.message}`, error.stack);
       
       if (error.name === 'TokenExpiredError') {
         throw new UnauthorizedException('Token expirado');

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { EspirituModule } from './espiritu/espiritu.module';
 import { PreguntaModule } from './pregunta/pregunta.module';
 import { RespuestaModule } from './respuesta/respuesta.module';
@@ -18,11 +18,12 @@ import { WebsocketModule } from './websockets/websocket.module';
 import { EsenciaModule } from './esencia/esencia.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { LanzamientosModule } from './lanzamientos/lanzamientos.module';
+import { RateLimitMiddleware } from './middleware/rate-limiting.middleware';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Esto asegura que las variables de entorno estén disponibles globalmente
+      isGlobal: true,
     }),
     EspirituModule,
     PreguntaModule,
@@ -45,4 +46,8 @@ import { LanzamientosModule } from './lanzamientos/lanzamientos.module';
   providers: [UserCleanupService],
   controllers: [],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(RateLimitMiddleware).forRoutes('auth/*');
+  }
+}

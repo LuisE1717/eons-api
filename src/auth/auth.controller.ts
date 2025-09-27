@@ -102,7 +102,7 @@ export class AuthController {
       this.logger.debug(`✅ Verification result: ${JSON.stringify(result)}`);
       
       if (result.success) {
-        // Redirección dinámica a verification-success - CORREGIDO
+        // ✅ CORRECCIÓN: Redirigir a la página de verificación exitosa
         return res.redirect(`${this.frontendUrl}/auth/verification-success?success=true`);
       } else {
         // Redirección dinámica con error - CORREGIDO

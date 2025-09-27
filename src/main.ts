@@ -7,34 +7,48 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
-  // 🔧 CONFIGURACIÓN CORS - AGREGA ESTO
+  // 🔧 CONFIGURACIÓN CORS MEJORADA
   app.enableCors({
-    origin: [
-      'https://eons.es',
-      'https://www.eons.es',
-      'http://localhost:4321', // para desarrollo
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            'https://eons.es',
+            'https://www.eons.es',
+            'http://localhost:4321'
+        ];
+        
+        // Permitir requests sin origin (como mobile apps o curl)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            console.log(`CORS blocked for origin: ${origin}`);
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
     allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Requested-With',
-      'Accept',
-      'Origin',
-      'Access-Control-Request-Method',
-      'Access-Control-Request-Headers',
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'Accept',
+        'Origin',
+        'Access-Control-Request-Method',
+        'Access-Control-Request-Headers',
+        'X-Forwarded-For',
+        'X-Real-IP'
     ],
     exposedHeaders: [
-      'Authorization',
-      'Access-Control-Allow-Origin',
-      'Access-Control-Allow-Credentials',
+        'Authorization',
+        'Access-Control-Allow-Origin',
     ],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
+    maxAge: 86400 // 24 horas
   });
 
-  // 🔧 MIDDLEWARE PERSONALIZADO PARA HEADERS - AGREGA ESTO TAMBIÉN
+  // 🔧 MIDDLEWARE PERSONALIZADO PARA HEADERS
   app.use((req, res, next) => {
     const allowedOrigins = [
       'https://eons.es',
@@ -49,14 +63,15 @@ async function bootstrap() {
 
     res.header(
       'Access-Control-Allow-Methods',
-      'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+      'GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD',
     );
     res.header(
       'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, X-Requested-With, Accept, Origin',
+      'Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Forwarded-For, X-Real-IP',
     );
     res.header('Access-Control-Allow-Credentials', 'true');
     res.header('Access-Control-Expose-Headers', 'Authorization');
+    res.header('Access-Control-Max-Age', '86400');
 
     if (req.method === 'OPTIONS') {
       return res.status(200).end();
@@ -79,6 +94,7 @@ async function bootstrap() {
 
   logger.log(`🚀 Application running on: http://localhost:${port}`);
   logger.log(`🌍 CORS enabled for: https://eons.es, https://www.eons.es`);
+  logger.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
 }
 
 bootstrap();

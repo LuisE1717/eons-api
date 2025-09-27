@@ -24,6 +24,9 @@ import { jwtConstants } from './constants/jwt.constant';
         issuer: 'eons-api',
         audience: 'eons-users',
       },
+      verifyOptions: {
+        ignoreExpiration: false,
+      }
     }),
     MailModule,
     PrismaModule,
