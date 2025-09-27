@@ -117,7 +117,7 @@ export class AuthService {
     }
   }
 
-  async login({ email, password }: LoginDto) {
+  async login({ email, password }: LoginDto): Promise<any> {
     const user = await this.userService.findOneByEmail(email);
     
     if (!user) {
@@ -138,8 +138,13 @@ export class AuthService {
             // Enviar email de verificación para ayudar al usuario
             await this.sendVerificationEmail(email, 'es');
             
-            // Lanzar excepción especial que indica que se necesita verificación
-            throw new UnauthorizedException('Invalid credentials. We have sent a verification email to your address. Please verify your email to continue.');
+            // Retornar objeto específico para verificación
+            return {
+                requiresVerification: true,
+                message: 'Invalid credentials. We have sent a verification email to your address. Please verify your email to continue.',
+                email: user.email,
+                verified: false
+            };
             
         } catch (emailError) {
             this.logger.error('Error sending verification email during login:', emailError);
@@ -168,7 +173,12 @@ export class AuthService {
     }
 
     // ✅ TODO CORRECTO - Login exitoso
-    return this.sendUser(user);
+    const loginResult = await this.sendUser(user);
+    return {
+        ...loginResult,
+        requiresVerification: false,
+        verified: true
+    };
   }
 
   async resetPassword({ newPassword }: ResetPasswordDto, email: string) {
@@ -254,7 +264,7 @@ export class AuthService {
     return { message: 'User Log-out' };
   }
 
-  private async sendUser(user: usuario) {
+  private async sendUser(user: usuario): Promise<LoginSuccessResponse> {
     const payload = {
       sub: user.id,
       id: user.id,

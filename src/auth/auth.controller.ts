@@ -104,14 +104,15 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() loginDto: LoginDto, @Res() res: Response) {
+async login(@Body() loginDto: LoginDto, @Res() res: Response) {
     try {
       this.logger.log(`Login attempt for: ${loginDto.email}`);
       
-      const result = await this.authService.login(loginDto);
+      const result: LoginResponse = await this.authService.login(loginDto);
       
-      // 🔄 SI REQUIERE VERIFICACIÓN DE EMAIL
-      if (result.requiresVerification) {
+      // 🔄 SI REQUIERE VERIFICACIÓN DE EMAIL - Type guard
+      if ('requiresVerification' in result && result.requiresVerification) {
+        const verificationResult = result as VerificationRequiredResponse;
         this.logger.log(`Login requires verification for: ${loginDto.email}`);
         
         res.cookie('eons_user', loginDto.email, { 
@@ -122,7 +123,7 @@ export class AuthController {
         
         return res.status(HttpStatus.OK).json({
           success: true,
-          message: result.message,
+          message: verificationResult.message,
           requiresVerification: true,
           redirectTo: `${this.frontendUrl}/auth/email-verification`,
           email: loginDto.email,
@@ -130,21 +131,26 @@ export class AuthController {
         });
       }
       
-      // ✅ LOGIN EXITOSO
+      // ✅ LOGIN EXITOSO - Type guard
+      const successResult = result as LoginSuccessResponse;
       this.logger.log(`Successful login for: ${loginDto.email}`);
       
       // Guardar tokens en cookies
-      res.cookie('eons_token', result.accessToken, { 
-        httpOnly: true, 
-        secure: !this.isDevelopment,
-        maxAge: 6 * 60 * 60 * 1000 // 6 horas
-      });
+      if (successResult.accessToken) {
+        res.cookie('eons_token', successResult.accessToken, { 
+          httpOnly: true, 
+          secure: !this.isDevelopment,
+          maxAge: 6 * 60 * 60 * 1000 // 6 horas
+        });
+      }
       
-      res.cookie('eons_refresh_token', result.refreshToken, { 
-        httpOnly: true, 
-        secure: !this.isDevelopment,
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
-      });
+      if (successResult.refreshToken) {
+        res.cookie('eons_refresh_token', successResult.refreshToken, { 
+          httpOnly: true, 
+          secure: !this.isDevelopment,
+          maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
+        });
+      }
       
       res.cookie('eons_user', loginDto.email, { 
         httpOnly: false, 
@@ -155,11 +161,11 @@ export class AuthController {
       return res.status(HttpStatus.OK).json({
         success: true,
         message: 'Login successful',
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-        email: result.email,
-        type: result.type,
-        verified: result.verified,
+        accessToken: successResult.accessToken,
+        refreshToken: successResult.refreshToken,
+        email: successResult.email,
+        type: successResult.type,
+        verified: successResult.verified,
         redirectTo: `${this.frontendUrl}/services`
       });
       
