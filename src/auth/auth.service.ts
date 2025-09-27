@@ -43,19 +43,29 @@ export class AuthService {
     const existingUser = await this.userService.findOneByEmail(email);
 
     if (existingUser) {
-        // Si el usuario existe, verificar si la contraseña coincide
-        const isPasswordValid = await bcryptjs.compare(password, existingUser.password);
+        // 🔄 USUARIO YA EXISTE - Enviar a verificación de email
+        this.logger.log(`User ${email} already exists, sending verification email`);
         
-        if (!isPasswordValid) {
-            throw new BadRequestException('An account with this email already exists');
+        try {
+            // Enviar email de verificación
+            await this.sendVerificationEmail(email, 'es');
+            
+            // Retornar respuesta especial para redirección
+            return {
+                success: true,
+                message: 'An account with this email already exists. We have sent a verification email to your address.',
+                requiresVerification: true,
+                email: email,
+                userExists: true
+            };
+            
+        } catch (emailError) {
+            this.logger.error('Error sending verification email:', emailError);
+            throw new BadRequestException('An account with this email already exists. Please try to login.');
         }
-        
-        // Si la contraseña coincide, permitir el "login" (usuario que ya estaba registrado)
-        this.logger.log(`User ${email} already exists, returning credentials`);
-        return this.sendUser(existingUser);
     }
 
-    // Crear nuevo usuario
+    // ✅ USUARIO NUEVO - Crear cuenta
     const hashedPassword = await bcryptjs.hash(password, 10);
     
     try {
@@ -64,29 +74,101 @@ export class AuthService {
             password: hashedPassword,
             type,
             esencia: 0,
-            isEmailVerified: false // Asegurar que esté false inicialmente
+            isEmailVerified: false
         });
 
-        // Enviar email de verificación
+        // Enviar email de verificación automáticamente
         try {
             await this.sendVerificationEmail(email, 'es');
-            this.logger.log(`Verification email sent to ${email}`);
+            this.logger.log(`Verification email sent to new user: ${email}`);
         } catch (emailError) {
             this.logger.error('Error sending verification email:', emailError);
             // No interrumpir el registro si falla el email
         }
 
-        return this.sendUser(user);
+        return {
+            success: true,
+            message: 'Registration successful. Please check your email for verification.',
+            requiresVerification: true,
+            email: user.email,
+            userExists: false
+        };
+        
     } catch (error) {
         this.logger.error(`Error creating user ${email}:`, error);
         
-        // Manejar error de duplicado de base de datos
-        if (error.code === 'P2002') { // Código de error de Prisma para unique constraint
-            throw new BadRequestException('An account with this email already exists');
+        if (error.code === 'P2002') {
+            // 🔄 Si ocurre error de duplicado durante la creación, enviar a verificación
+            try {
+                await this.sendVerificationEmail(email, 'es');
+                return {
+                    success: true,
+                    message: 'An account with this email already exists. We have sent a verification email to your address.',
+                    requiresVerification: true,
+                    email: email,
+                    userExists: true
+                };
+            } catch (emailError) {
+                throw new BadRequestException('An account with this email already exists. Please try to login.');
+            }
         }
         
         throw new BadRequestException('Error creating user account');
     }
+  }
+
+  async login({ email, password }: LoginDto) {
+    const user = await this.userService.findOneByEmail(email);
+    
+    if (!user) {
+        // 🔄 USUARIO NO EXISTE - Pero lo tratamos como si existiera para seguridad
+        this.logger.log(`Login attempt for non-existent user: ${email}`);
+        
+        // Por seguridad, no revelamos que el usuario no existe
+        throw new UnauthorizedException('Invalid credentials. Please verify your email address.');
+    }
+
+    const isPasswordValid = await bcryptjs.compare(password, user.password);
+    
+    if (!isPasswordValid) {
+        // 🔄 CONTRASEÑA INCORRECTA - Enviar a verificación
+        this.logger.log(`Invalid password for user: ${email}`);
+        
+        try {
+            // Enviar email de verificación para ayudar al usuario
+            await this.sendVerificationEmail(email, 'es');
+            
+            // Lanzar excepción especial que indica que se necesita verificación
+            throw new UnauthorizedException('Invalid credentials. We have sent a verification email to your address. Please verify your email to continue.');
+            
+        } catch (emailError) {
+            this.logger.error('Error sending verification email during login:', emailError);
+            throw new UnauthorizedException('Invalid credentials. Please verify your email address.');
+        }
+    }
+
+    // ✅ CREDENCIALES VÁLIDAS - Verificar si el email está verificado
+    if (!user.isEmailVerified) {
+        this.logger.log(`User ${email} not verified, sending verification email`);
+        
+        try {
+            await this.sendVerificationEmail(email, 'es');
+            
+            // Retornar respuesta especial que indica que necesita verificación
+            return {
+                requiresVerification: true,
+                message: 'Your account is not verified. We have sent a verification email to your address.',
+                email: user.email,
+                verified: false
+            };
+        } catch (emailError) {
+            this.logger.error('Error sending verification email:', emailError);
+            throw new UnauthorizedException('Your account is not verified. Please check your email for verification instructions.');
+        }
+    }
+
+    // ✅ TODO CORRECTO - Login exitoso
+    return this.sendUser(user);
   }
 
   async resetPassword({ newPassword }: ResetPasswordDto, email: string) {
@@ -138,20 +220,6 @@ export class AuthService {
       isEmailVerified: true,
       esencia:0
     });
-
-    return this.sendUser(user);
-  }
-
-  async login({ email, password }: LoginDto) {
-    const user = await this.userService.findOneByEmail(email);
-    if (!user) {
-      throw new UnauthorizedException('email is wrong');
-    }
-
-    const isPasswordValid = await bcryptjs.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('password is wrong');
-    }
 
     return this.sendUser(user);
   }
@@ -211,6 +279,7 @@ export class AuthService {
       type: user.type,
       valid: user.isEmailVerified,
       essence: user.esencia,
+      verified: user.isEmailVerified,
     };
   }
 
