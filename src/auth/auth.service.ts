@@ -117,15 +117,28 @@ export class AuthService {
     }
   }
 
-  async login({ email, password }: LoginDto): Promise<any> {
+  async login({ email, password }: LoginDto) {
     const user = await this.userService.findOneByEmail(email);
     
     if (!user) {
         // 🔄 USUARIO NO EXISTE - Pero lo tratamos como si existiera para seguridad
         this.logger.log(`Login attempt for non-existent user: ${email}`);
         
-        // Por seguridad, no revelamos que el usuario no existe
-        throw new UnauthorizedException('Invalid credentials. Please verify your email address.');
+        try {
+            // Intentar enviar email de verificación
+            await this.sendVerificationEmail(email, 'es');
+            
+            return {
+                requiresVerification: true,
+                message: 'Invalid credentials. We have sent a verification email to your address. Please verify your email to continue.',
+                email: email,
+                verified: false
+            };
+            
+        } catch (emailError) {
+            this.logger.error('Error sending verification email during login:', emailError);
+            throw new UnauthorizedException('Invalid credentials. Please verify your email address.');
+        }
     }
 
     const isPasswordValid = await bcryptjs.compare(password, user.password);
@@ -138,7 +151,6 @@ export class AuthService {
             // Enviar email de verificación para ayudar al usuario
             await this.sendVerificationEmail(email, 'es');
             
-            // Retornar objeto específico para verificación
             return {
                 requiresVerification: true,
                 message: 'Invalid credentials. We have sent a verification email to your address. Please verify your email to continue.',
@@ -159,7 +171,6 @@ export class AuthService {
         try {
             await this.sendVerificationEmail(email, 'es');
             
-            // Retornar respuesta especial que indica que necesita verificación
             return {
                 requiresVerification: true,
                 message: 'Your account is not verified. We have sent a verification email to your address.',
@@ -264,7 +275,7 @@ export class AuthService {
     return { message: 'User Log-out' };
   }
 
-  private async sendUser(user: usuario): Promise<LoginSuccessResponse> {
+  private async sendUser(user: usuario) {
     const payload = {
       sub: user.id,
       id: user.id,
