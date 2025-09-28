@@ -133,17 +133,6 @@ export class AuthService {
       throw new UnauthorizedException('password is wrong');
     }
 
-    // 🔄 VERIFICACIÓN MEJORADA: Si el usuario no está verificado, enviar email automáticamente
-    if (!user.isEmailVerified) {
-      try {
-        await this.sendVerificationEmail(email, 'es');
-        this.logger.debug(`📧 Verification email sent automatically for unverified user: ${email}`);
-      } catch (error) {
-        this.logger.error('Error sending automatic verification email:', error);
-        // No lanzar error para no interrumpir el flujo de login
-      }
-    }
-
     return this.sendUser(user);
   }
 
