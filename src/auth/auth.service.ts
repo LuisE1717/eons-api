@@ -19,6 +19,37 @@ import { HttpService } from '@nestjs/axios';
 import { map } from 'rxjs';
 import { NotificationsService } from 'src/notifications/notifications.service';
 
+// Definir interfaces para los tipos de retorno
+interface LoginSuccessResponse {
+  refreshToken: string;
+  accessToken: string;
+  email: string;
+  type: string;
+  valid: boolean;
+  essence: number;
+  verified: boolean;
+  requiresVerification?: boolean;
+}
+
+interface VerificationRequiredResponse {
+  requiresVerification: boolean;
+  message: string;
+  email: string;
+  verified: boolean;
+}
+
+type LoginResult = LoginSuccessResponse | VerificationRequiredResponse;
+
+// Type guard para verificar si es una respuesta de verificación
+function isVerificationResponse(result: any): result is VerificationRequiredResponse {
+  return result && result.requiresVerification === true && typeof result.message === 'string';
+}
+
+// Type guard para verificar si es una respuesta de login exitoso
+function isLoginSuccessResponse(result: any): result is LoginSuccessResponse {
+  return result && result.accessToken && result.refreshToken;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -117,7 +148,7 @@ export class AuthService {
     }
   }
 
-  async login({ email, password }: LoginDto) {
+  async login({ email, password }: LoginDto): Promise<LoginResult> {
     const user = await this.userService.findOneByEmail(email);
     
     if (!user) {
@@ -275,7 +306,7 @@ export class AuthService {
     return { message: 'User Log-out' };
   }
 
-  private async sendUser(user: usuario) {
+  private async sendUser(user: usuario): Promise<LoginSuccessResponse> {
     const payload = {
       sub: user.id,
       id: user.id,

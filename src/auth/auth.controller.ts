@@ -22,6 +22,9 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JWTUser } from 'src/lib/jwt';
 import { Response } from 'express';
 
+// Importar las funciones type guard del servicio
+import { isVerificationResponse, isLoginSuccessResponse } from './auth.service';
+
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
@@ -110,8 +113,8 @@ export class AuthController {
       
       const result = await this.authService.login(loginDto);
       
-      // 🔄 SI REQUIERE VERIFICACIÓN DE EMAIL
-      if (result.requiresVerification) {
+      // 🔄 SI REQUIERE VERIFICACIÓN DE EMAIL - Usar type guard
+      if (isVerificationResponse(result)) {
         this.logger.log(`Login requires verification for: ${loginDto.email}`);
         
         res.cookie('eons_user', loginDto.email, { 
@@ -130,42 +133,43 @@ export class AuthController {
         });
       }
       
-      // ✅ LOGIN EXITOSO
-      this.logger.log(`Successful login for: ${loginDto.email}`);
-      
-      // Guardar tokens en cookies (verificar que existen primero)
-      if (result.accessToken) {
+      // ✅ LOGIN EXITOSO - Usar type guard
+      if (isLoginSuccessResponse(result)) {
+        this.logger.log(`Successful login for: ${loginDto.email}`);
+        
+        // Guardar tokens en cookies
         res.cookie('eons_token', result.accessToken, { 
           httpOnly: true, 
           secure: !this.isDevelopment,
           maxAge: 6 * 60 * 60 * 1000 // 6 horas
         });
-      }
-      
-      if (result.refreshToken) {
+        
         res.cookie('eons_refresh_token', result.refreshToken, { 
           httpOnly: true, 
           secure: !this.isDevelopment,
           maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
         });
+        
+        res.cookie('eons_user', loginDto.email, { 
+          httpOnly: false, 
+          secure: !this.isDevelopment,
+          maxAge: 24 * 60 * 60 * 1000
+        });
+        
+        return res.status(HttpStatus.OK).json({
+          success: true,
+          message: 'Login successful',
+          accessToken: result.accessToken,
+          refreshToken: result.refreshToken,
+          email: result.email,
+          type: result.type,
+          verified: result.verified,
+          redirectTo: `${this.frontendUrl}/services`
+        });
       }
       
-      res.cookie('eons_user', loginDto.email, { 
-        httpOnly: false, 
-        secure: !this.isDevelopment,
-        maxAge: 24 * 60 * 60 * 1000
-      });
-      
-      return res.status(HttpStatus.OK).json({
-        success: true,
-        message: 'Login successful',
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-        email: result.email,
-        type: result.type,
-        verified: result.verified,
-        redirectTo: `${this.frontendUrl}/services`
-      });
+      // ❌ CASO INESPERADO
+      throw new HttpException('Unexpected login response', HttpStatus.INTERNAL_SERVER_ERROR);
       
     } catch (error) {
       this.logger.error(`Login error for ${loginDto.email}:`, error);
