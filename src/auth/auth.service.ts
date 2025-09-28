@@ -133,6 +133,7 @@ export class AuthService {
       throw new UnauthorizedException('password is wrong');
     }
 
+    // Devolver el usuario sin lanzar excepción para manejar la verificación en el controlador
     return this.sendUser(user);
   }
 

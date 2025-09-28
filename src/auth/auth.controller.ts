@@ -39,8 +39,32 @@ export class AuthController {
   }
 
   @Post('login')
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginDto, @Res() res: Response) {
+    try {
+      const result = await this.authService.login(loginDto);
+      
+      // Si el usuario no tiene el email verificado, enviar correo de verificación
+      if (!result.valid) {
+        this.logger.debug(`📧 Usuario no verificado, enviando correo de verificación: ${loginDto.email}`);
+        await this.authService.sendVerificationEmail(loginDto.email, 'es');
+        
+        // Devolver respuesta indicando que se necesita verificación
+        return res.status(200).json({
+          ...result,
+          requiresVerification: true,
+          message: 'Se ha enviado un correo de verificación. Por favor verifica tu email.'
+        });
+      }
+      
+      // Si está verificado, devolver resultado normal
+      return res.status(200).json({
+        ...result,
+        requiresVerification: false
+      });
+    } catch (error) {
+      this.logger.error(`❌ Error en login: ${error.message}`);
+      throw error;
+    }
   }
 
   @Get('login')
@@ -121,5 +145,19 @@ export class AuthController {
     @Query('lang') lang: string
     ) {
     return this.authService.sendVerificationEmail(email, lang);
+  }
+
+  @Post('resend-verification')
+  async resendVerificationEmail(@Body() body: { email: string, lang?: string }) {
+    try {
+      const result = await this.authService.sendVerificationEmail(body.email, body.lang || 'es');
+      return {
+        success: true,
+        message: 'Correo de verificación enviado exitosamente'
+      };
+    } catch (error) {
+      this.logger.error(`❌ Error al reenviar correo de verificación: ${error.message}`);
+      throw error;
+    }
   }
 }
