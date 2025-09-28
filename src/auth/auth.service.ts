@@ -4,6 +4,7 @@ import {
   NotFoundException,
   UnauthorizedException,
   Logger,
+  ConflictException,
 } from '@nestjs/common';
 import { UsuariosService } from 'src/usuario/usuario.service';
 import { RegisterDto } from './dto/register.dto';
@@ -38,16 +39,31 @@ export class AuthService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
+  // 🔄 NUEVO MÉTODO: Verificar si usuario existe
+  async checkUserExists(email: string): Promise<usuario | null> {
+    try {
+      return await this.userService.findOneByEmail(email);
+    } catch (error) {
+      this.logger.debug(`ℹ️ User not found: ${email}`);
+      return null;
+    }
+  }
+
   async register({ email, password, type }: RegisterDto) {
     let user = await this.userService.findOneByEmail(email);
 
     if(user){
       const isPasswordValid = await bcryptjs.compare(password, user?.password)
       if (isPasswordValid) {
+        // 🔄 Usuario existe y contraseña correcta - pero no verificado
+        if (!user.isEmailVerified) {
+          this.logger.debug(`🔄 Existing unverified user: ${email}`);
+          throw new ConflictException('User already exists but email is not verified');
+        }
         return this.sendUser(user);
       }
       else {
-        throw new UnauthorizedException('User Alredy exist')
+        throw new UnauthorizedException('User already exists with different password')
       }
     }
 
@@ -55,12 +71,14 @@ export class AuthService {
       email,
       password: await bcryptjs.hash(password, 10),
       type,
-      esencia:0
+      isEmailVerified: false, // 🔄 SIEMPRE empezar como no verificado
+      esencia: 0
     });
 
     // Enviar email de verificación automáticamente después del registro
     try {
       await this.sendVerificationEmail(email, 'es');
+      this.logger.debug(`📧 Verification email sent to: ${email}`);
     } catch (error) {
       this.logger.error('Error sending verification email:', error);
       // No lanzar error para no interrumpir el registro
@@ -93,15 +111,15 @@ export class AuthService {
       return this.sendUser(user);
     }
 
-    await this.userService.createUsuario({
+    const newUser = await this.userService.createUsuario({
       email,
       password: await bcryptjs.hash(password, 10),
       type: 'google',
-      isEmailVerified: true,
-      esencia:0
+      isEmailVerified: true, // OAuth providers are automatically verified
+      esencia: 0
     });
 
-    return this.sendUser(user);
+    return this.sendUser(newUser);
   }
 
   async microsoft({ email, password }: RegisterDto) {
@@ -111,29 +129,29 @@ export class AuthService {
       return this.sendUser(user);
     }
 
-    await this.userService.createUsuario({
+    const newUser = await this.userService.createUsuario({
       email,
       password: await bcryptjs.hash(password, 10),
       type: 'microsoft',
-      isEmailVerified: true,
-      esencia:0
+      isEmailVerified: true, // OAuth providers are automatically verified
+      esencia: 0
     });
 
-    return this.sendUser(user);
+    return this.sendUser(newUser);
   }
 
   async login({ email, password }: LoginDto) {
     const user = await this.userService.findOneByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('email is wrong');
+      throw new UnauthorizedException('Email or password is incorrect');
     }
 
     const isPasswordValid = await bcryptjs.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('password is wrong');
+      throw new UnauthorizedException('Email or password is incorrect');
     }
 
-    // Devolver el usuario sin lanzar excepción para manejar la verificación en el controlador
+    // 🔄 Devolver el usuario sin lanzar excepción para manejar la verificación en el controlador
     return this.sendUser(user);
   }
 
@@ -293,25 +311,24 @@ export class AuthService {
     }
   }
 
-  async sendVerificationEmail(email: string,lang: string) {
+  async sendVerificationEmail(email: string, lang: string) {
     const user = await this.userService.findOneByEmail(email);
 
     if (!user) {
       throw new BadRequestException('Email does not exist');
     } else if (user.isEmailVerified) {
-      throw new BadRequestException('This user its valid');
+      throw new BadRequestException('This user is already verified');
     }
 
     const payload = { email: user.email, id: user.id };
 
     const token = await this.jwtService.signAsync(payload, {
-      expiresIn: '1h',
+      expiresIn: '24h', // 🔄 Aumentado a 24 horas para mayor flexibilidad
       secret: jwtConstants.accessSecret,
     });
 
     // URL dinámica según el entorno - CORREGIDO
-    const resetUrl = `${this.backendUrl}/auth/verify-email/?token=${token}`;
-
+    const verificationUrl = `${this.backendUrl}/auth/verify-email/?token=${token}`;
 
     if(lang == 'es'){
       const htmlContent = `
@@ -320,17 +337,20 @@ export class AuthService {
         <p>Hola ${email},</p>
         <p>Por favor verifica tu correo electrónico haciendo clic en el siguiente botón:</p>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${resetUrl}" style="background-color: #8a2be2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+          <a href="${verificationUrl}" style="background-color: #8a2be2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
             Verificar Email
           </a>
         </div>
-        <p>Si no solicitaste este cambio, puedes ignorar este correo electrónico.</p>
+        <p>Si no creaste una cuenta en EONS, puedes ignorar este correo electrónico.</p>
         <p>Saludos,</p>
         <p>El equipo de EONS</p>
         <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
         <p style="font-size: 12px; color: #666; text-align: center;">
           Si tienes problemas para hacer clic en el botón, copia y pega la siguiente URL en tu navegador:<br>
-          ${resetUrl}
+          ${verificationUrl}
+        </p>
+        <p style="font-size: 12px; color: #666; text-align: center; margin-top: 10px;">
+          Este enlace expirará en 24 horas.
         </p>
       </div>
     `;
@@ -338,9 +358,10 @@ export class AuthService {
       try {
         await this.mailerService.sendMail({
           to: email,
-          subject: 'Verifica tu correo electrónico',
+          subject: 'Verifica tu correo electrónico - EONS',
           html: htmlContent,
         });
+        this.logger.debug(`✅ Verification email sent successfully to: ${email}`);
       } catch (error) {
         this.logger.error('Error sending verification email:', error);
         throw new BadRequestException('Error sending verification email');
@@ -353,17 +374,20 @@ export class AuthService {
         <p>Hello ${email},</p>
         <p>Please verify your email address by clicking the button below:</p>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${resetUrl}" style="background-color: #8a2be2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+          <a href="${verificationUrl}" style="background-color: #8a2be2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
             Verify Email
           </a>
         </div>
-        <p>If you did not request this change, you can ignore this email.</p>
+        <p>If you did not create an account with EONS, you can ignore this email.</p>
         <p>Regards,</p>
         <p>The EONS Team</p>
         <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
         <p style="font-size: 12px; color: #666; text-align: center;">
           If you're having trouble clicking the button, copy and paste the URL below into your web browser:<br>
-          ${resetUrl}
+          ${verificationUrl}
+        </p>
+        <p style="font-size: 12px; color: #666; text-align: center; margin-top: 10px;">
+          This link will expire in 24 hours.
         </p>
       </div>
     `;
@@ -371,9 +395,10 @@ export class AuthService {
       try {
         await this.mailerService.sendMail({
           to: email,
-          subject: 'Verify your email address',
+          subject: 'Verify your email address - EONS',
           html: htmlContent,
         });
+        this.logger.debug(`✅ Verification email sent successfully to: ${email}`);
       } catch (error) {
         this.logger.error('Error sending verification email:', error);
         throw new BadRequestException('Error sending verification email');
@@ -435,7 +460,6 @@ export class AuthService {
       }
     }
   }
-
 
   async recoverSection(refreshToken: string) {
     try {

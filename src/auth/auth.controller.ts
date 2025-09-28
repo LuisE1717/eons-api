@@ -9,6 +9,7 @@ import {
   Headers,
   Res,
   Logger,
+  HttpStatus,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -31,39 +32,126 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
   
   @Post('register')
-  register(
-    @Body()
-    registerDto: RegisterDto,
+  async register(
+    @Body() registerDto: RegisterDto,
+    @Res() res: Response
   ) {
-    return this.authService.register(registerDto);
+    try {
+      this.logger.debug(`📝 Attempting registration for: ${registerDto.email}`);
+      
+      const result = await this.authService.register(registerDto);
+      
+      // 🔄 SIEMPRE redirigir a verificación después del registro
+      this.logger.debug(`📧 Registration successful, sending verification email: ${registerDto.email}`);
+      
+      return res.status(HttpStatus.OK).json({
+        success: true,
+        requiresVerification: true,
+        message: 'Registration successful. Please verify your email.',
+        email: registerDto.email,
+        redirectTo: `${this.frontendUrl}/auth/email-verification?email=${encodeURIComponent(registerDto.email)}`,
+        // No enviar tokens hasta que el email esté verificado
+      });
+    } catch (error) {
+      this.logger.error(`❌ Registration error: ${error.message}`, error.stack);
+      
+      // 🔄 Si el usuario ya existe, redirigir a verificación
+      if (error.message.includes('already exists') || error.status === 409) {
+        this.logger.debug(`🔄 User already exists, sending verification: ${registerDto.email}`);
+        
+        try {
+          await this.authService.sendVerificationEmail(registerDto.email, 'es');
+          
+          return res.status(HttpStatus.OK).json({
+            success: true,
+            requiresVerification: true,
+            userExists: true,
+            message: 'An account with this email already exists. We have sent a verification email.',
+            email: registerDto.email,
+            redirectTo: `${this.frontendUrl}/auth/email-verification?email=${encodeURIComponent(registerDto.email)}&userExists=true`,
+          });
+        } catch (verificationError) {
+          this.logger.error(`❌ Error sending verification for existing user: ${verificationError.message}`);
+        }
+      }
+      
+      // Manejar otros errores
+      return res.status(error.status || HttpStatus.BAD_REQUEST).json({
+        success: false,
+        message: error.message || 'Registration failed',
+        requiresVerification: false,
+      });
+    }
   }
 
   @Post('login')
   async login(@Body() loginDto: LoginDto, @Res() res: Response) {
     try {
+      this.logger.debug(`🔐 Attempting login for: ${loginDto.email}`);
+      
       const result = await this.authService.login(loginDto);
       
-      // Si el usuario no tiene el email verificado, enviar correo de verificación
+      // 🔄 SIEMPRE verificar el estado de verificación del email
       if (!result.valid) {
-        this.logger.debug(`📧 Usuario no verificado, enviando correo de verificación: ${loginDto.email}`);
-        await this.authService.sendVerificationEmail(loginDto.email, 'es');
+        this.logger.debug(`📧 User not verified, sending verification: ${loginDto.email}`);
         
-        // Devolver respuesta indicando que se necesita verificación
-        return res.status(200).json({
-          ...result,
+        try {
+          await this.authService.sendVerificationEmail(loginDto.email, 'es');
+        } catch (emailError) {
+          this.logger.error(`❌ Error sending verification email: ${emailError.message}`);
+        }
+        
+        // Redirigir a verificación
+        return res.status(HttpStatus.OK).json({
           requiresVerification: true,
-          message: 'Se ha enviado un correo de verificación. Por favor verifica tu email.'
+          message: 'Please verify your email address to continue. A verification email has been sent.',
+          email: loginDto.email,
+          redirectTo: `${this.frontendUrl}/auth/email-verification?email=${encodeURIComponent(loginDto.email)}&fromLogin=true`,
+          // No enviar tokens hasta que el email esté verificado
         });
       }
       
-      // Si está verificado, devolver resultado normal
-      return res.status(200).json({
+      // ✅ Usuario verificado - enviar tokens
+      this.logger.debug(`✅ Login successful for verified user: ${loginDto.email}`);
+      
+      return res.status(HttpStatus.OK).json({
         ...result,
-        requiresVerification: false
+        requiresVerification: false,
+        success: true,
+        redirectTo: `${this.frontendUrl}/services`,
       });
+      
     } catch (error) {
-      this.logger.error(`❌ Error en login: ${error.message}`);
-      throw error;
+      this.logger.error(`❌ Login error: ${error.message}`, error.stack);
+      
+      // 🔄 En caso de error de credenciales, verificar si el usuario existe y necesita verificación
+      if (error.status === HttpStatus.UNAUTHORIZED) {
+        try {
+          const user = await this.authService.checkUserExists(loginDto.email);
+          if (user && !user.isEmailVerified) {
+            this.logger.debug(`🔄 Unverified user attempted login, sending verification: ${loginDto.email}`);
+            
+            await this.authService.sendVerificationEmail(loginDto.email, 'es');
+            
+            return res.status(HttpStatus.OK).json({
+              requiresVerification: true,
+              message: 'Please verify your email address to continue. A verification email has been sent.',
+              email: loginDto.email,
+              redirectTo: `${this.frontendUrl}/auth/email-verification?email=${encodeURIComponent(loginDto.email)}&fromLogin=true`,
+            });
+          }
+        } catch (checkError) {
+          this.logger.debug(`ℹ️ User not found or error checking: ${loginDto.email}`);
+        }
+      }
+      
+      // Para otros errores, devolver error normal
+      const status = error.status || HttpStatus.BAD_REQUEST;
+      return res.status(status).json({
+        success: false,
+        message: error.message || 'Login failed',
+        requiresVerification: false,
+      });
     }
   }
 
@@ -117,7 +205,6 @@ export class AuthController {
     
     if (!token) {
       this.logger.error('❌ No token provided in query parameters');
-      // Redirección dinámica según el entorno - CORREGIDO
       return res.redirect(`${this.frontendUrl}/auth/email-verification?error=no_token`);
     }
 
@@ -126,15 +213,13 @@ export class AuthController {
       this.logger.debug(`✅ Verification result: ${JSON.stringify(result)}`);
       
       if (result.success) {
-        // Redirección dinámica a verification-success - CORREGIDO
+        // Redirección a verification-success
         return res.redirect(`${this.frontendUrl}/auth/verification-success?success=true`);
       } else {
-        // Redirección dinámica con error - CORREGIDO
         return res.redirect(`${this.frontendUrl}/auth/email-verification?error=${encodeURIComponent(result.message)}`);
       }
     } catch (error) {
       this.logger.error(`❌ Error in verify-email endpoint: ${error.message}`, error.stack);
-      // Redirección dinámica con error - CORREGIDO
       return res.redirect(`${this.frontendUrl}/auth/email-verification?error=${encodeURIComponent(error.message)}`);
     }
   }
@@ -158,6 +243,26 @@ export class AuthController {
     } catch (error) {
       this.logger.error(`❌ Error al reenviar correo de verificación: ${error.message}`);
       throw error;
+    }
+  }
+
+  // 🔄 NUEVO ENDPOINT: Verificar estado de usuario
+  @Get('check-user')
+  async checkUser(@Query('email') email: string) {
+    try {
+      const user = await this.authService.checkUserExists(email);
+      return {
+        exists: !!user,
+        isVerified: user?.isEmailVerified || false,
+        email: email
+      };
+    } catch (error) {
+      this.logger.error(`❌ Error checking user: ${error.message}`);
+      return {
+        exists: false,
+        isVerified: false,
+        email: email
+      };
     }
   }
 }
