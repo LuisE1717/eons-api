@@ -31,7 +31,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
   
   @Post('register')
-  register(
+  async register(
     @Body()
     registerDto: RegisterDto,
   ) {
@@ -39,7 +39,7 @@ export class AuthController {
   }
 
   @Post('login')
-  login(@Body() loginDto: LoginDto) {
+  async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 
@@ -121,5 +121,13 @@ export class AuthController {
     @Query('lang') lang: string
     ) {
     return this.authService.sendVerificationEmail(email, lang);
+  }
+
+  // 🔄 NUEVO ENDPOINT PARA REENVÍO DE VERIFICACIÓN
+  @Post('resend-verification')
+  async resendVerification(
+    @Body() body: { email: string; lang: string }
+  ) {
+    return this.authService.resendVerification(body.email, body.lang || 'es');
   }
 }

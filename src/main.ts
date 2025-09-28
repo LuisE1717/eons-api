@@ -1,84 +1,55 @@
+// En tu main.ts o app.module.ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
-import { Logger } from '@nestjs/common';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const logger = new Logger('Bootstrap');
 
-  // 🔧 CONFIGURACIÓN CORS - AGREGA ESTO
+  // Configuración CORS robusta para todos los dispositivos
   app.enableCors({
     origin: [
       'https://eons.es',
-      'https://www.eons.es',
-      'http://localhost:4321', // para desarrollo
+      'http://localhost:4321',
+      'http://localhost:3000',
+      // Agregar más dominios si es necesario
     ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: [
-      'Content-Type',
-      'Authorization',
-      'X-Requested-With',
-      'Accept',
       'Origin',
-      'Access-Control-Request-Method',
-      'Access-Control-Request-Headers',
-    ],
-    exposedHeaders: [
+      'X-Requested-With',
+      'Content-Type',
+      'Accept',
       'Authorization',
+      'X-API-Key',
       'Access-Control-Allow-Origin',
+      'Access-Control-Allow-Headers',
+      'Access-Control-Allow-Methods',
       'Access-Control-Allow-Credentials',
     ],
+    exposedHeaders: ['Authorization', 'Content-Length', 'X-API-Key'],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
+    maxAge: 86400, // 24 horas
   });
 
-  // 🔧 MIDDLEWARE PERSONALIZADO PARA HEADERS - AGREGA ESTO TAMBIÉN
-  app.use((req, res, next) => {
-    const allowedOrigins = [
-      'https://eons.es',
-      'https://www.eons.es',
-      'http://localhost:4321',
-    ];
-    const origin = req.headers.origin as string;
+  // Configuración de body parser para manejar payloads grandes
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
-    if (allowedOrigins.includes(origin)) {
-      res.header('Access-Control-Allow-Origin', origin);
-    }
+  // Global prefix
+  app.setGlobalPrefix('api');
 
-    res.header(
-      'Access-Control-Allow-Methods',
-      'GET, POST, PUT, DELETE, OPTIONS, PATCH',
-    );
-    res.header(
-      'Access-Control-Allow-Headers',
-      'Content-Type, Authorization, X-Requested-With, Accept, Origin',
-    );
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Expose-Headers', 'Authorization');
+  // Global validation pipe
+  app.useGlobalPipes(new ValidationPipe());
 
-    if (req.method === 'OPTIONS') {
-      return res.status(200).end();
-    }
-
-    next();
-  });
-
-  // Pipe de validación global
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
+  // Configuración del puerto
   const port = process.env.PORT || 3000;
-  await app.listen(port);
 
-  logger.log(`🚀 Application running on: http://localhost:${port}`);
-  logger.log(`🌍 CORS enabled for: https://eons.es, https://www.eons.es`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
 }
 
 bootstrap();

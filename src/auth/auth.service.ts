@@ -44,10 +44,32 @@ export class AuthService {
     if(user){
       const isPasswordValid = await bcryptjs.compare(password, user?.password)
       if (isPasswordValid) {
+        // 🔄 USUARIO EXISTE - REDIRIGIR A VERIFICACIÓN
+        if (!user.isEmailVerified) {
+          await this.sendVerificationEmail(email, 'es');
+          return {
+            requiresVerification: true,
+            redirectTo: `${this.frontendUrl}/auth/email-verification/${email}`,
+            message: 'User already exists. Verification email sent.',
+            email: email,
+            userExists: true
+          };
+        }
         return this.sendUser(user);
       }
       else {
-        throw new UnauthorizedException('User Alredy exist')
+        // 🔄 USUARIO EXISTE PERO CONTRASEÑA INCORRECTA - REDIRIGIR A VERIFICACIÓN
+        if (!user.isEmailVerified) {
+          await this.sendVerificationEmail(email, 'es');
+          return {
+            requiresVerification: true,
+            redirectTo: `${this.frontendUrl}/auth/email-verification/${email}`,
+            message: 'User already exists. Please verify your email.',
+            email: email,
+            userExists: true
+          };
+        }
+        throw new UnauthorizedException('User already exists');
       }
     }
 
@@ -61,12 +83,28 @@ export class AuthService {
     // Enviar email de verificación automáticamente después del registro
     try {
       await this.sendVerificationEmail(email, 'es');
+      
+      // 🔄 NUEVO USUARIO - REDIRIGIR A VERIFICACIÓN
+      return {
+        requiresVerification: true,
+        redirectTo: `${this.frontendUrl}/auth/email-verification/${email}`,
+        message: 'Registration successful. Please verify your email.',
+        email: email,
+        userExists: false,
+        success: true
+      };
     } catch (error) {
       this.logger.error('Error sending verification email:', error);
       // No lanzar error para no interrumpir el registro
+      return {
+        requiresVerification: true,
+        redirectTo: `${this.frontendUrl}/auth/email-verification/${email}`,
+        message: 'Registration successful but verification email failed. Please request a new verification email.',
+        email: email,
+        userExists: false,
+        success: true
+      };
     }
-
-    return this.sendUser(user);
   }
 
   async resetPassword({ newPassword }: ResetPasswordDto, email: string) {
@@ -125,12 +163,41 @@ export class AuthService {
   async login({ email, password }: LoginDto) {
     const user = await this.userService.findOneByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('email is wrong');
+      // 🔄 USUARIO NO EXISTE - CREAR Y REDIRIGIR A VERIFICACIÓN
+      const newUser = await this.userService.createUsuario({
+        email,
+        password: await bcryptjs.hash(password, 10),
+        type: 'mail',
+        esencia: 0
+      });
+
+      await this.sendVerificationEmail(email, 'es');
+      
+      return {
+        requiresVerification: true,
+        redirectTo: `${this.frontendUrl}/auth/email-verification/${email}`,
+        message: 'Account created. Please verify your email.',
+        email: email,
+        userExists: false,
+        success: true
+      };
     }
 
     const isPasswordValid = await bcryptjs.compare(password, user.password);
     if (!isPasswordValid) {
       throw new UnauthorizedException('password is wrong');
+    }
+
+    // 🔄 USUARIO EXISTE PERO NO VERIFICADO - REDIRIGIR A VERIFICACIÓN
+    if (!user.isEmailVerified) {
+      await this.sendVerificationEmail(email, 'es');
+      return {
+        requiresVerification: true,
+        redirectTo: `${this.frontendUrl}/auth/email-verification/${email}`,
+        message: 'Please verify your email to continue.',
+        email: email,
+        userExists: true
+      };
     }
 
     return this.sendUser(user);
@@ -469,6 +536,25 @@ export class AuthService {
       }
     } catch (error) {
       throw new Error('Error retrieving profile');
+    }
+  }
+
+  // 🔄 NUEVO MÉTODO PARA REENVÍO DE VERIFICACIÓN
+  async resendVerification(email: string, lang: string) {
+    try {
+      const result = await this.sendVerificationEmail(email, lang);
+      return {
+        success: true,
+        message: 'Verification email sent successfully',
+        email: email
+      };
+    } catch (error) {
+      this.logger.error('Error resending verification email:', error);
+      return {
+        success: false,
+        message: error.message || 'Error sending verification email',
+        email: email
+      };
     }
   }
 }
