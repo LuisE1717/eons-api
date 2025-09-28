@@ -20,7 +20,7 @@ import { map } from 'rxjs';
 import { NotificationsService } from 'src/notifications/notifications.service';
 
 // Definir interfaces para los tipos de retorno
-interface LoginSuccessResponse {
+export interface LoginSuccessResponse {
   refreshToken: string;
   accessToken: string;
   email: string;
@@ -31,22 +31,22 @@ interface LoginSuccessResponse {
   requiresVerification?: boolean;
 }
 
-interface VerificationRequiredResponse {
+export interface VerificationRequiredResponse {
   requiresVerification: boolean;
   message: string;
   email: string;
   verified: boolean;
 }
 
-type LoginResult = LoginSuccessResponse | VerificationRequiredResponse;
+export type LoginResult = LoginSuccessResponse | VerificationRequiredResponse;
 
 // Type guard para verificar si es una respuesta de verificación
-function isVerificationResponse(result: any): result is VerificationRequiredResponse {
+export function isVerificationResponse(result: any): result is VerificationRequiredResponse {
   return result && result.requiresVerification === true && typeof result.message === 'string';
 }
 
 // Type guard para verificar si es una respuesta de login exitoso
-function isLoginSuccessResponse(result: any): result is LoginSuccessResponse {
+export function isLoginSuccessResponse(result: any): result is LoginSuccessResponse {
   return result && result.accessToken && result.refreshToken;
 }
 
@@ -577,7 +577,7 @@ export class AuthService {
   }
 
 
-  async recoverSection(refreshToken: string) {
+  async recoverSection(refreshToken: string): Promise<LoginSuccessResponse> {
     try {
       // Extraer el token del header "Bearer token"
       const token = refreshToken.replace('Bearer ', '');

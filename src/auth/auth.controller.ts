@@ -23,7 +23,11 @@ import { JWTUser } from 'src/lib/jwt';
 import { Response } from 'express';
 
 // Importar las funciones type guard del servicio
-import { isVerificationResponse, isLoginSuccessResponse } from './auth.service';
+import { 
+  isVerificationResponse, 
+  isLoginSuccessResponse,
+  LoginSuccessResponse 
+} from './auth.service';
 
 @Controller('auth')
 export class AuthController {
@@ -209,7 +213,7 @@ export class AuthController {
 
   @Get('login')
   @UseGuards(RefreshGuard)
-  recoverSection(@Headers('authorization') refreshToken: string) {
+  recoverSection(@Headers('authorization') refreshToken: string): Promise<LoginSuccessResponse> {
     return this.authService.recoverSection(refreshToken);
   }
 
