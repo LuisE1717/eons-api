@@ -78,6 +78,42 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 * Website - [https://nestjs.com](https://nestjs.com/)
 * Twitter - [@nestframework](https://twitter.com/nestframework)
 
+## Finalizing the `main` and `develop` Synchronization
+
+**⚠️ Warning: The following steps are destructive and will overwrite the history of the `main` branch. Only proceed after you have thoroughly tested the `develop` branch and are certain it is stable and correct.**
+
+Once you have deployed and validated that the `develop` branch is working as expected, follow these steps to complete the synchronization with the `main` branch:
+
+1.  **Ensure your local `develop` branch is up to date:**
+    ```bash
+    git checkout develop
+    git pull origin develop
+    ```
+
+2.  **Switch to the `main` branch:**
+    ```bash
+    git checkout main
+    ```
+
+3.  **Reset the `main` branch to match `develop`:** This command makes your local `main` branch identical to your local `develop` branch.
+    ```bash
+    git reset --hard develop
+    ```
+
+4.  **Force-push the updated `main` branch to the remote repository:** This will overwrite the remote `main` branch with your newly synchronized local version.
+    ```bash
+    git push origin main --force
+    ```
+
+5.  **Clean up the temporary branches:** Now that `main` and `develop` are synchronized, you can safely delete the unification branch and the backup branches you may have created.
+    ```bash
+    # Delete the local unification branch
+    git branch -d feature/unify-main-develop
+
+    # Delete the remote unification branch (if you pushed it)
+    git push origin --delete feature/unify-main-develop
+    ```
+
 ## License
 
 Nest is [MIT licensed](LICENSE).
