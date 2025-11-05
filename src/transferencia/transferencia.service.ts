@@ -65,19 +65,13 @@ export class TransferenciaService {
       estado: false,
     });
 
-    return { message: 'Transfer successful' };
+    return { essence: (sender.esencia - amount) };
   }
 
-  async getRecentTransfers(userId: string) {
-    const userEmail = await this.prisma.usuario.findUnique({
-      where: { id: userId },
-      select: {
-        email: true,
-      },
-    });
+  async getRecentTransfers(userId: string,userEmail:string) {
     const transfers = await this.prisma.transferencia.findMany({
       where: {
-        OR: [{ user_id: userId }, { receiver: userEmail.email }],
+        OR: [{ user_id: userId }, { receiver: userEmail }],
       },
       orderBy: {
         date: 'desc',

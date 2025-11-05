@@ -33,7 +33,7 @@ export class UsuariosService {
     });
   }
 
-  async findOneByEmail(email: string) {
+  async findOneByEmail(email: string): Promise<usuario> {
     return this.prisma.usuario.findFirst({
       where: {
         email,
@@ -41,7 +41,7 @@ export class UsuariosService {
     });
   }
 
-  async findOneByEmailAndPassword(email: string,password:string) {
+  async findOneByEmailAndPassword(email: string, password: string): Promise<usuario> {
     return this.prisma.usuario.findFirst({
       where: {
         email,
@@ -50,7 +50,7 @@ export class UsuariosService {
     });
   }
 
-  async findOneById(id: string) {
+  async findOneById(id: string): Promise<usuario> {
     return this.prisma.usuario.findFirst({
       where: {
         id,

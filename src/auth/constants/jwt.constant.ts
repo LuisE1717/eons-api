@@ -1,4 +1,4 @@
 export const jwtConstants = {
-  accessSecret: 'VARIABLE DE ENTORNO',
-  refreshSecret: 'asdasdasdasdas',
+  accessSecret: process.env.JWT_SECRET || 'fallback-secret-key',
+  refreshSecret: process.env.JWT_REFRESH_SECRET || 'fallback-refresh-key',
 };

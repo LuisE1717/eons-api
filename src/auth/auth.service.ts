@@ -3,10 +3,10 @@ import {
   Injectable,
   NotFoundException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { UsuariosService } from 'src/usuario/usuario.service';
 import { RegisterDto } from './dto/register.dto';
-
 import * as bcryptjs from 'bcryptjs';
 import { LoginDto, LogOutDto } from './dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
@@ -21,6 +21,15 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+  private readonly isDevelopment = process.env.NODE_ENV === 'development';
+  private readonly frontendUrl = this.isDevelopment 
+    ? 'http://localhost:4321' 
+    : 'https://eons.es';
+  private readonly backendUrl = this.isDevelopment 
+    ? 'http://localhost:3000' 
+    : 'https://api.eons.es';
+
   constructor(
     private readonly userService: UsuariosService,
     private readonly jwtService: JwtService,
@@ -48,6 +57,12 @@ export class AuthService {
       esencia: 0,
     });
 
+    try {
+      await this.sendVerificationEmail(email, 'es');
+    } catch (error) {
+      this.logger.error('Error sending verification email:', error);
+    }
+
     return this.sendUser(user);
   }
 
@@ -58,7 +73,7 @@ export class AuthService {
       return this.sendUser(user);
     }
 
-    await this.userService.createUsuario({
+    const newUser = await this.userService.createUsuario({
       email,
       password: await bcryptjs.hash(password, 10),
       type: 'google',
@@ -66,7 +81,7 @@ export class AuthService {
       esencia: 0,
     });
 
-    return this.sendUser(user);
+    return this.sendUser(newUser);
   }
 
   async microsoft({ email, password }: RegisterDto) {
@@ -76,7 +91,7 @@ export class AuthService {
       return this.sendUser(user);
     }
 
-    await this.userService.createUsuario({
+    const newUser = await this.userService.createUsuario({
       email,
       password: await bcryptjs.hash(password, 10),
       type: 'microsoft',
@@ -84,7 +99,7 @@ export class AuthService {
       esencia: 0,
     });
 
-    return this.sendUser(user);
+    return this.sendUser(newUser);
   }
 
   async login({ email, password }: LoginDto) {
@@ -131,13 +146,320 @@ export class AuthService {
     return { message: 'User Log-out' };
   }
 
+  async requestPasswordReset({ email, lang }: ResetPasswordRequestDto) {
+    const user = await this.userService.findOneByEmail(email);
+
+    if (!user) {
+      this.logger.warn(`Password reset request for non-existent user: ${email}`);
+      return;
+    }
+
+    const token = await this.jwtService.signAsync(
+      { email },
+      {
+        expiresIn: '1h',
+        secret: jwtConstants.accessSecret,
+      },
+    );
+
+    const resetUrl = `${this.frontendUrl}/auth/change-password/${token}/${email}`;
+
+    if (lang == 'es') {
+      const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+        <h2 style="color: #333; text-align: center;">Restablecer Contraseña</h2>
+        <p>Hola ${user.email},</p>
+        <p>Recibimos una solicitud para restablecer tu contraseña. Haz clic en el siguiente botón para restablecer tu contraseña:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="background-color: #9370DB; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+            Restablecer Contraseña
+          </a>
+        </div>
+        <p>Si no solicitaste este cambio, puedes ignorar este correo electrónico.</p>
+        <p>Saludos,</p>
+        <p>EONS</p>
+        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666; text-align: center;">
+          Si tienes problemas para hacer clic en el botón, copia y pega la siguiente URL en tu navegador:<br>
+          ${resetUrl}
+        </p>
+      </div>
+    `;
+
+      try {
+        await this.mailerService.sendMail({
+          from: '"EONS" <infoeons.es@gmail.com>',
+          to: email,
+          subject: 'Solicitud de restablecimiento de contraseña',
+          html: htmlContent,
+        });
+      } catch (error) {
+        this.logger.error('Error sending password reset email:', error);
+        throw new BadRequestException('Error sending email');
+      }
+
+      return { message: 'Password reset email sent', token: token };
+    } else {
+      const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+        <h2 style="color: #333; text-align: center;">Password Reset</h2>
+        <p>Hello ${user.email},</p>
+        <p>We have received a request to reset your password. Please click the button below to reset your password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="background-color: #9370DB; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+            Reset Password
+          </a>
+        </div>
+        <p>If you did not request this change, you can ignore this email.</p>
+        <p>Regards,</p>
+        <p>EONS</p>
+        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666; text-align: center;">
+          If you're having trouble clicking the button, copy and paste the URL below into your web browser:<br>
+          ${resetUrl}
+        </p>
+      </div>
+    `;
+
+      try {
+        await this.mailerService.sendMail({
+          from: '"EONS" <infoeons.es@gmail.com>',
+          to: email,
+          subject: 'Password Reset Request',
+          html: htmlContent,
+        });
+      } catch (error) {
+        this.logger.error('Error sending password reset email:', error);
+        throw new BadRequestException('Error sending email');
+      }
+
+      return { message: 'Password reset email sent', token: token };
+    }
+  }
+
+  async resetPassword({ newPassword }: ResetPasswordDto, userEmail: string) {
+    const user = await this.userService.findOneByEmail(userEmail);
+    if (!user) {
+      throw new NotFoundException('Email does not exist');
+    }
+
+    user.password = await bcryptjs.hash(newPassword, 10);
+    await this.userService.updateUsuario(
+      { password: user.password, email: user.email, type: user.type },
+      user.id,
+    );
+
+    return { message: 'Password successfully reset' };
+  }
+
+  async sendVerificationEmail(email: string, lang: string) {
+    const user = await this.userService.findOneByEmail(email);
+
+    if (!user) {
+      throw new BadRequestException('Email does not exist');
+    } else if (user.isEmailVerified) {
+      throw new BadRequestException('This user its valid');
+    }
+
+    const payload = { email: user.email, id: user.id };
+
+    const token = await this.jwtService.signAsync(payload, {
+      expiresIn: '1h',
+      secret: jwtConstants.accessSecret,
+    });
+
+    const resetUrl = `${this.backendUrl}/auth/verify-email/?token=${token}`;
+
+    if (lang == 'es') {
+      const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+        <h2 style="color: #333; text-align: center;">Verifica tu correo electrónico</h2>
+        <p>Hola ${email},</p>
+        <p>Por favor verifica tu correo electrónico haciendo clic en el siguiente botón:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="background-color: #8a2be2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+            Verificar Email
+          </a>
+        </div>
+        <p>Si no solicitaste este cambio, puedes ignorar este correo electrónico.</p>
+        <p>Saludos,</p>
+        <p>El equipo de EONS</p>
+        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666; text-align: center;">
+          Si tienes problemas para hacer clic en el botón, copia y pega la siguiente URL en tu navegador:<br>
+          ${resetUrl}
+        </p>
+      </div>
+    `;
+
+      try {
+        await this.mailerService.sendMail({
+          from: '"EONS" <infoeons.es@gmail.com>',
+          to: email,
+          subject: 'Verifica tu correo electrónico',
+          html: htmlContent,
+        });
+      } catch (error) {
+        this.logger.error('Error sending verification email:', error);
+        throw new BadRequestException('Error sending verification email');
+      }
+    } else {
+      const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+        <h2 style="color: #333; text-align: center;">Verify your email address</h2>
+        <p>Hello ${email},</p>
+        <p>Please verify your email address by clicking the button below:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="background-color: #8a2be2; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+            Verify Email
+          </a>
+        </div>
+        <p>If you did not request this change, you can ignore this email.</p>
+        <p>Regards,</p>
+        <p>The EONS Team</p>
+        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;">
+        <p style="font-size: 12px; color: #666; text-align: center;">
+          If you're having trouble clicking the button, copy and paste the URL below into your web browser:<br>
+          ${resetUrl}
+        </p>
+      </div>
+    `;
+
+      try {
+        await this.mailerService.sendMail({
+          from: '"EONS" <infoeons.es@gmail.com>',
+          to: email,
+          subject: 'Verify your email address',
+          html: htmlContent,
+        });
+      } catch (error) {
+        this.logger.error('Error sending verification email:', error);
+        throw new BadRequestException('Error sending verification email');
+      }
+    }
+
+    return { message: 'Verification email sent' };
+  }
+
+  async verifyEmail(token: string) {
+    try {
+      this.logger.debug(`🔍 Attempting to verify email with token: ${token}`);
+      
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: jwtConstants.accessSecret,
+      });
+
+      this.logger.debug(`✅ Token payload: ${JSON.stringify(payload)}`);
+
+      if (!payload || !payload.email) {
+        this.logger.error('❌ Invalid token payload: missing email');
+        return { success: false, message: 'Invalid token payload' };
+      }
+
+      const user = await this.userService.findOneByEmail(payload.email);
+
+      if (!user) {
+        this.logger.warn(`❌ User not found for email: ${payload.email}`);
+        return { success: false, message: 'User not found' };
+      }
+
+      if (user.isEmailVerified) {
+        this.logger.debug(`ℹ️ Email already verified for user: ${user.email}`);
+        return { success: true, message: 'Email already verified' };
+      }
+
+      await this.userService.updateUsuario(
+        { ...user, isEmailVerified: true },
+        user.id,
+      );
+
+      this.notificationsService.createNotification({
+        nombre: 'Cuenta Verificada',
+        id_usuario: user.id,
+        tipo: 'validAcount',
+        descripcion: 'Su cuenta ha sido verificada con éxito',
+        estado: false,
+      });
+
+      this.logger.debug(`🎉 Email verified successfully for user: ${user.email}`);
+      return { success: true, message: 'Email verified successfully' };
+    } catch (error) {
+      this.logger.error(`❌ Email verification failed: ${error.message}`, error.stack);
+      
+      if (error.name === 'TokenExpiredError') {
+        return { success: false, message: 'Token expired. Please request a new verification email.' };
+      } else if (error.name === 'JsonWebTokenError') {
+        return { success: false, message: 'Invalid token format.' };
+      } else if (error.name === 'NotBeforeError') {
+        return { success: false, message: 'Token not yet valid.' };
+      } else {
+        return { success: false, message: 'Invalid or expired token' };
+      }
+    }
+  }
+
+  async readDocumentation(userId: string) {
+    try {
+      const user = await this.userService.findOneById(userId);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      user.readDocumentation = true;
+      await this.userService.updateUsuario(user, userId);
+      return { success: true };
+    } catch (error) {
+      throw new Error('Token inválido o expirado');
+    }
+  }
+
+  async recoverSection(refreshToken: string) {
+    try {
+      const token = refreshToken.replace('Bearer ', '');
+      
+      const payload = await this.jwtService.verifyAsync(token, {
+        secret: jwtConstants.refreshSecret,
+      });
+
+      const user = await this.userService.findOneById(payload.id);
+      
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      return this.sendUser(user);
+    } catch (error) {
+      throw new UnauthorizedException('Invalid or expired token');
+    }
+  }
+
+  async getProfile(userId: string) {
+    try {
+      const notificaciones = await this.notificationsService.findAllUnreadNotifications(userId);
+      const user = await this.userService.findOneById(userId);
+      
+      if (user) {
+        return this.sendProfile(user, notificaciones);
+      } else {
+        throw new Error('User not found');
+      }
+    } catch (error) {
+      throw new Error('Error retrieving profile');
+    }
+  }
+
   private async sendUser(user: usuario) {
-    const payload = { id: user.id, email: user.email };
+    const payload = {
+      sub: user.id,
+      id: user.id,
+      email: user.email,
+      type: user.type,
+    };
 
     const refreshToken = await this.jwtService.signAsync(payload, {
       expiresIn: '7d',
       secret: jwtConstants.refreshSecret,
     });
+
     const accessToken = await this.jwtService.signAsync(payload, {
       expiresIn: '6h',
       secret: jwtConstants.accessSecret,
@@ -160,258 +482,5 @@ export class AuthService {
       isRead: user.readDocumentation,
       notificaciones,
     };
-  }
-
-  async requestPasswordReset({ email, lang }: ResetPasswordRequestDto) {
-    const user = await this.userService.findOneByEmail(email);
-
-    if (!user) {
-      throw new BadRequestException('Email does not exist');
-    }
-
-    const token = await this.jwtService.signAsync(
-      { email },
-      {
-        expiresIn: '1h',
-        secret: jwtConstants.accessSecret,
-      },
-    );
-
-    const resetUrl = `${process.env.FURL}/auth/change-password/${token}/${email}`;
-
-    if (lang == 'es') {
-      const htmlContent = `
-      <p>Estimado(a) ${user.email},</p>
-      <p>Hemos recibido una solicitud para restablecer la contraseña de su cuenta en nuestra plataforma. Para completar este proceso y asegurar que solo
-       usted tenga acceso a nuestros servicios de excelencia, haga clic en el enlace a continuación:</p>
-      <p><a href="${resetUrl}">Restablecer Contraseña</a></p>
-      <p>Si no realizó esta solicitud, le recomendamos omitir este mensaje para mantener la seguridad de su cuenta.</p>
-
-      <p>Agradecemos su confianza en un servicio reservado solo para quienes comparten nuestro compromiso con la más alta calidad y distinción.</p>
-
-      <p>Cordialmente,</p>
-      <p>Equipo EONS</p>
-    `;
-
-      await this.mailerService.sendMail({
-        from: '"EONS" <infoeons.es@gmail.com>',
-        to: email,
-        subject: 'Solicitud de restablecimiento de contraseña',
-        html: htmlContent,
-        context: {
-          name: user.email,
-          resetUrl,
-        },
-      });
-
-      return { message: 'Password reset email sent', token: token };
-    } else {
-      const htmlContent = `
-      <p>Dear ${user.email},</p>
-      <p>We have received a request to reset the password for your account on our platform. To complete this process and ensure that only you have access to
-       our services of excellence, please click on the link below:</p>
-      <p><a href="${resetUrl}">Reset Password</a></p>
-      <p>If you did not make this request, we recommend ignoring this message to maintain the security of your account.</p>
-
-      <p>We appreciate your trust in a service reserved exclusively for those who share our commitment to the highest quality and distinction.</p>
-
-      <p>Sincerely,</p>
-      <p>EONS Team</p>
-    `;
-
-      await this.mailerService.sendMail({
-        from: '"EONS" <infoeons.es@gmail.com>',
-        to: email,
-        subject: 'Password Reset Request',
-        html: htmlContent,
-        context: {
-          name: user.email,
-          resetUrl,
-        },
-      });
-      return { message: 'Password reset email sent', token: token };
-    }
-  }
-
-  async resetPassword({ newPassword }: ResetPasswordDto, userEmail: string) {
-    const user = await this.userService.findOneByEmail(userEmail);
-    if (!user) {
-      throw new NotFoundException('Email does not exist');
-    }
-
-    // try {
-    //    const payload = await this.jwtService.verifyAsync(token);
-    //    email = payload.email;
-    //  } catch (e) {
-    //    throw new BadRequestException('Invalid or expired token');
-    // }
-
-    user.password = await bcryptjs.hash(newPassword, 10);
-    await this.userService.updateUsuario(
-      { password: user.password, email: user.email, type: user.type },
-      user.id,
-    );
-
-    return { message: 'Password successfully reset' };
-  }
-
-  async sendVerificationEmail(email: string, lang: string) {
-    const user = await this.userService.findOneByEmail(email);
-
-    if (!user) {
-      throw new BadRequestException('Email does not exist');
-    } else if (user.isEmailVerified) {
-      throw new BadRequestException('This user its valid');
-    }
-
-    const payload = { email: user.email };
-
-    const token = await this.jwtService.signAsync(payload, {
-      expiresIn: '1h',
-      secret: jwtConstants.accessSecret,
-    });
-
-    const resetUrl = `${process.env.BURL}/auth/verify-email/?token=${token}`;
-
-    if (lang == 'es') {
-      const htmlContent = `
-        <p>Estimado(a) ${email},</p>
-        <p>Nos complace informarle que está a un paso de completar su proceso de autenticación en nuestra plataforma exclusiva. Para finalizar su verificación y 
-        asegurar su acceso a este entorno reservado para quienes buscan la excelencia, haga clic en el enlace a continuación:</p>
-        <p><a href="${resetUrl}">Verificar Correo Electrónico</a></p>
-        <p>¡Importante! Activar vpn si presenta problemas en el proceso de validación.</p>
-       <p>Si usted no solicitó esta verificación, le sugerimos omitir este mensaje para mantener la integridad de su cuenta.</p>
-
-      <p>Agradecemos su confianza en un servicio reservado solo para quienes comparten nuestro compromiso con la más alta calidad y distinción.</p>
-
-      <p>Cordialmente,</p>
-      <p>Equipo EONS</p>
-      `;
-      try {
-        await this.mailerService.sendMail({
-          from: '"EONS" <infoeons.es@gmail.com>',
-          to: email,
-          subject: 'Verifica tu correo electrónico',
-          html: htmlContent,
-          context: {
-            resetUrl,
-          },
-        });
-      } catch (error) {
-        console.log('Error es:', error);
-      }
-      return token;
-    } else {
-      const htmlContent = `
-      <p>Dear ${email},</p>
-      <p>We are pleased to inform you that you are one step away from completing your authentication process on our exclusive platform. To finalize your 
-      verification and ensure access to this environment reserved for those pursuing excellence, please click on the link below:</p>
-      <p><a href="${resetUrl}">Verify Email Address</a></p>
-      <p>If you did not request this verification, we recommend ignoring this message to maintain the integrity of your account.</p>
-      <p>We appreciate your trust in a service reserved exclusively for those who share our commitment to the highest quality and distinction.</p>
-
-      <p>Sincerely,</p>
-      <p>EONS Team</p>
-    `;
-      try {
-        await this.mailerService.sendMail({
-          from: '"EONS" <infoeons.es@gmail.com>',
-          to: email,
-          subject: 'Verify your email',
-          html: htmlContent,
-          context: {
-            resetUrl,
-          },
-        });
-      } catch (error) {
-        console.log('Error en:', error);
-      }
-
-      return token;
-    }
-  }
-  async readDocumentation(userId: string) {
-    try {
-      const user = await this.userService.findOneById(userId);
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-      user.readDocumentation = true;
-      await this.userService.updateUsuario(user, userId);
-      return { success: true };
-      // this.notificationsService.createNotification({
-      //   nombre: 'Instrucciones de uso leidas',
-      //   id_usuario: userId,
-      //   tipo: 'readDocumentation',
-      //   descripcion: 'A leido las instrucciones de uso',
-      //   estado: false,
-      // });
-      // return { success: true };
-    } catch (error) {
-      throw new Error('Token inválido o expirado');
-    }
-  }
-
-  async verifyEmail(token: string) {
-    try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: jwtConstants.accessSecret,
-      });
-      const email = payload.email;
-      const user = await this.userService.findOneByEmail(email);
-      if (user) {
-        user.isEmailVerified = true;
-        await this.userService.updateUsuario(user, user.id);
-        this.notificationsService.createNotification({
-          nombre: 'Cuenta Verificada',
-          id_usuario: user.id,
-          tipo: 'validAcount',
-          descripcion: 'Su cuenta ha sido verificada con éxito',
-          estado: false,
-        });
-        return { success: true };
-      } else {
-        throw new Error('Correo electrónico no encontrado');
-      }
-    } catch (error) {
-      throw new Error('Token inválido o expirado');
-    }
-  }
-
-  async recoverSection(refreshToken: string) {
-    try {
-      // eslint-disable-next-line prefer-const
-      let [type, token] = refreshToken.split(' ') ?? [];
-      token = type === 'Bearer' ? token : undefined;
-
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: jwtConstants.refreshSecret,
-      });
-
-      const email = payload.email;
-      const user = await this.userService.findOneByEmail(email);
-      if (user) {
-        return this.sendUser(user);
-      } else {
-        throw new Error('Correo electrónico no encontrado');
-      }
-    } catch (error) {
-      throw new Error('Token inválido o expirado');
-    }
-  }
-
-  async getProfile(userId: string) {
-    try {
-      const notificaciones =
-        await this.notificationsService.findAllUnreadNotifications(userId);
-      const user = await this.userService.findOneById(userId);
-      if (notificaciones && user) {
-        return this.sendProfile(user, notificaciones);
-      } else {
-        throw new Error('Correo electrónico no encontrado');
-      }
-    } catch (error) {
-      throw new Error('Token inválido o expirado');
-    }
   }
 }

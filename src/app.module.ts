@@ -19,9 +19,13 @@ import { EsenciaModule } from './esencia/esencia.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { LaunchModule } from './launch/launch.module';
 import { MessagesModule } from './messages/messages.module';
+import { LanzamientosModule } from './lanzamientos/lanzamientos.module';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true, // Esto asegura que las variables de entorno estén disponibles globalmente
+    }),
     EspirituModule,
     PreguntaModule,
     RespuestaModule,
@@ -29,8 +33,8 @@ import { MessagesModule } from './messages/messages.module';
     RespuestaDiaModule,
     UsuarioModule,
     MonedaModule,
+    LanzamientosModule,
     AuthModule,
-    ConfigModule.forRoot(),
     TropiPayModule,
     RespuestaPredialogoModule,
     EvaluacionGeneralModule,

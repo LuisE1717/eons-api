@@ -7,53 +7,30 @@ import {
   Request,
   BadRequestException,
   Query,
-  Res,
+  Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { TropiPayService } from './tropipay.service';
+import { TropiPayV3Service } from './tropipay-v3.service';
 import { EsenciasService } from 'src/esencia/esencia.service';
 import { sha256 } from 'js-sha256';
 import { UsuariosService } from 'src/usuario/usuario.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { JWTUser } from 'src/lib/jwt';
 import { AccessGuard } from 'src/auth/auth.guard';
-import { Tropipay } from '@yosle/tropipayjs';
-import { ServerMode$1 } from './type/type';
 import { PaymentOperation } from './dto/paymentCheck';
 
 @Controller('tropipay')
 export class TropiPayController {
+  private readonly logger = new Logger(TropiPayController.name);
+
   constructor(
     private readonly tropiPayService: TropiPayService,
+    private readonly tropiPayV3Service: TropiPayV3Service,
     private readonly esenciaService: EsenciasService,
     private readonly usuarioService: UsuariosService,
     private readonly prisma: PrismaService,
-  ) {
-    // this.tpp.hooks.subscribe({
-    //   eventType: 'transaction_completed',
-    //   target: 'web',
-    //   value: 'https://apidev.eons.es/tropipay/tcompleted',
-    // });
-    // this.tpp.hooks.subscribe({
-    //   eventType: 'transaction_charged',
-    //   target: 'web',
-    //   value: 'https://apidev.eons.es/tropipay/tcharged',
-    // });
-  }
-  config = {
-    clientId: process.env.TROPIPAY_CLIENT_ID,
-    clientSecret: process.env.TROPIPAY_CLIENT_SECRET,
-    scopes: [
-      'ALLOW_GET_PROFILE_DATA',
-      'ALLOW_PAYMENT_IN',
-      'ALLOW_EXTERNAL_CHARGE',
-      'KYC3_FULL_ALLOW',
-      'ALLOW_GET_BALANCE',
-      'ALLOW_GET_MOVEMENT_LIST',
-    ],
-    serverMode: 'Production' as ServerMode$1,
-  };
-  tpp = new Tropipay(this.config);
+  ) {}
 
   @Post('create-payment-card/:id')
   @UseGuards(AccessGuard)
@@ -63,48 +40,53 @@ export class TropiPayController {
     @Query() { lang }: { lang: string },
   ) {
     try {
-      console.log('UserId:', req.user.id);
+      this.logger.log(`Creating payment for esencia ID: ${id}, user: ${req.user.id}`);
+      
       const date = new Date();
-      const formattedDateTime = date.toLocaleString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      });
-      const ref = (await this.usuarioService.getUsuarioById(req.user.id)).email;
+      const formattedDateTime = date.toISOString();
+      
+      const user = await this.usuarioService.getUsuarioById(req.user.id);
       const esencia = await this.esenciaService.getEsenciaById(Number(id));
+      
+      this.logger.log(`User: ${user.email}, Esencia: ${esencia.descripcion}, Price: ${esencia.precio}`);
+      
       const payload = {
-        descripcion: esencia.descripcion,
-        precio: Number(esencia.precio) * 100,
-      };
-      console.log(payload);
-      const payment = {
-        reference: ref,
-        concept: 'de Esencia',
-        favorite: true,
-        description: payload.descripcion,
-        amount: payload.precio,
+        reference: user.email,
+        concept: 'Compra de Esencia',
+        description: esencia.descripcion,
+        amount: Math.round(Number(esencia.precio) * 100),
         currency: 'EUR',
         singleUse: true,
         reasonId: 4,
         expirationDays: 1,
-        lang: lang || 'en',
-        urlSuccess: 'https://www.eons.es/payment',
-        urlFailed: 'https://www.eons.es/payment/failed',
-        urlNotification: 'https://api.eons.es/tropipay',
+        favorite: true,
+        lang: lang || 'es',
+        successUrl: 'https://www.eons.es/payment/success',
+        failUrl: 'https://www.eons.es/payment/failed',
+        notificationUrl: 'https://api.eons.es/tropipay/webhook',
         serviceDate: formattedDateTime,
-        client: null,
         directPayment: true,
         paymentMethods: ['EXT', 'TPP'],
       };
-      console.log(JSON.stringify(payment, null, 2));
-      return await this.tpp.paymentCards.create(payment);
+
+      this.logger.log('Sending payload to TropiPay:', JSON.stringify(payload, null, 2));
+      
+      const result = await this.tropiPayV3Service.createPaymentLink(payload);
+      this.logger.log('Payment link created successfully');
+      
+      return result;
+      
     } catch (error) {
-      console.log(error);
-      if (error?.error?.message == 'Card credit cashin limit exceded')
-        throw new BadRequestException('limit exceded');
+      this.logger.error('Payment creation failed:', error.message, error.stack);
+      
+      if (error.message.includes('limit exceded') || error.message.includes('limit exceeded')) {
+        throw new BadRequestException('Límite excedido');
+      }
+      if (error.message.includes('authentication') || error.message.includes('credentials')) {
+        throw new BadRequestException('Error de autenticación con TropiPay');
+      }
+      
+      throw new BadRequestException('Error al crear el pago: ' + error.message);
     }
   }
 
@@ -114,144 +96,105 @@ export class TropiPayController {
     @Body() datah: PaymentOperation,
     @Request() req: { user: JWTUser },
   ) {
-    console.log('UserId:', req.user.id);
     try {
       const date = new Date();
-      const formattedDateTime = date.toLocaleString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      });
-      console.log('Paymentcard data:', datah);
-      const ref = (await this.usuarioService.getUsuarioById(req.user.id)).email;
+      const formattedDateTime = date.toISOString();
+      
+      const user = await this.usuarioService.getUsuarioById(req.user.id);
+      
       const payload = {
-        descripcion: `${datah.esencia} de Esencia`,
-
-        precio: datah.precio * 100,
-      };
-      return await this.tpp.paymentCards.create({
-        reference: ref,
+        reference: user.email,
         concept: 'Esencia',
-        favorite: true,
-        description: payload.descripcion,
-        amount: payload.precio,
+        description: `${datah.esencia} de Esencia`,
+        amount: datah.precio * 100,
         currency: 'EUR',
         singleUse: true,
         reasonId: 4,
         expirationDays: 1,
+        favorite: true,
         lang: 'es',
-        urlSuccess: 'https://www.eons.es/payment',
-        urlFailed: 'https://www.eons.es/payment/failed',
-        urlNotification: 'https://api.eons.es/tropipay',
-        //'https://eons-services.onrender.com/tropipay/',
+        successUrl: 'https://www.eons.es/payment/success',
+        failUrl: 'https://www.eons.es/payment/failed',
+        notificationUrl: 'https://api.eons.es/tropipay/webhook',
         serviceDate: formattedDateTime,
-        client: null,
         directPayment: true,
         paymentMethods: ['EXT', 'TPP'],
-      });
+      };
+
+      const result = await this.tropiPayV3Service.createPaymentLink(payload);
+      return result;
+      
     } catch (error) {
-      console.log(error);
-      if (error?.error?.message == 'Card credit cashin limit exceded')
+      console.log('Custom payment creation error:', error);
+      if (error.message.includes('limit exceded') || error.message.includes('limit exceeded')) {
         throw new BadRequestException('limit exceded');
+      }
+      throw new BadRequestException('Error creating custom payment: ' + error.message);
     }
   }
 
+  @Post('webhook')
+  async handleWebhook(@Body() data: any) {
+    this.logger.log('Webhook received from TropiPay:', JSON.stringify(data, null, 2));
+    return await this.validateSignature(data);
+  }
+
   @Post()
-  async validateSignature(@Body() data) {
+  async validateSignature(@Body() data: any) {
     try {
-      console.log(JSON.stringify(data, null, 2));
-      const { bankOrderCode, originalCurrencyAmount, signaturev2 } = data.data;
-      console.log(signaturev2);
-      const clientId = process.env.TROPIPAY_CLIENT_ID;
-      const clientSecret = process.env.TROPIPAY_CLIENT_SECRET;
+      console.log('Datos recibidos de TropiPay:', JSON.stringify(data, null, 2));
+      
+      const bankOrderCode = data.data?.bankOrderCode || data.data?.bank_order_code;
+      const amount = data.data?.amount || data.data?.originalCurrencyAmount;
+      const signature = data.data?.signature || data.data?.signaturev2;
+      
+      if (!bankOrderCode || !amount || !signature) {
+        throw new BadRequestException('Datos de pago incompletos');
+      }
+      
+      const clientId = process.env.TROPIPAY_CLIENT_ID?.trim();
+      const clientSecret = process.env.TROPIPAY_CLIENT_SECRET?.trim();
 
-      const messageToSign = `${bankOrderCode}${clientId}${clientSecret}${originalCurrencyAmount}`;
+      if (!clientId || !clientSecret) {
+        throw new BadRequestException('TropiPay credentials not configured');
+      }
 
+      const messageToSign = `${bankOrderCode}${clientId}${clientSecret}${amount}`;
       const expectedSignature = sha256(messageToSign);
-      if (expectedSignature !== signaturev2) {
-        throw new Error('Invalid signature');
+
+      if (expectedSignature === signature) {
+        let epay = 0;
+        
+        if (amount === 499) epay = 5;
+        else if (amount === 1440) epay = 15;
+        else if (amount === 2350) epay = 25;
+        else if (amount === 4599) epay = 50;
+        else if (amount === 8999) epay = 100;
+        else if (amount === 21250) epay = 250;
+        else if (amount === 71999) epay = 1000;
+        else if (amount === 174999) epay = 2500;
+        else {
+          const match = data.data.description?.match(/\d+/);
+          epay = match ? parseInt(match[0], 10) : 0;
+        }
+
+        const user = await this.usuarioService.findOneByEmail(data.data.reference);
+        user.esencia = user.esencia + epay;
+        await this.usuarioService.updateUsuario(user, user.id);
+        
+        return this.prisma.compra.create({
+          data: {
+            email: data.data.reference,
+            bank_order: bankOrderCode,
+          },
+        });
+      } else {
+        console.log('Firma no válida');
+        throw new BadRequestException('Invalid signature');
       }
-      const amountToEpayMap = new Map<number, number>([
-        [499, 5],
-        [1440, 15],
-        [2350, 25],
-        [4599, 50],
-        [8999, 100],
-        [21250, 250],
-        [71999, 1000],
-        [174999, 2500],
-      ]);
-
-      const amount = data.data.paymentcard.amount;
-      let epay = amountToEpayMap.get(amount) || 0;
-      epay = epay * 2; // Duplicamos la cantidad de esencia
-      // Si no coincide con los valores predeterminados, trata de extraer el valor de la descripción
-      if (epay === 0) {
-        const match = data.data.paymentcard.description.match(/\d+/);
-        epay = match ? parseInt(match[0], 10) : 0;
-      }
-
-      const user = await this.usuarioService.findOneByEmail(
-        data.data.reference,
-      );
-
-      if (!user) {
-        throw new Error('User not found');
-      }
-      const updatedEsencia = user.esencia + epay;
-      const compra = await this.prisma.compra.create({
-        data: {
-          email: data.data.reference,
-          bank_order: data.data.bankOrderCode,
-        },
-      });
-
-      await this.usuarioService.updateUsuario(
-        { ...user, esencia: updatedEsencia },
-        user.id,
-      );
-
-      return compra;
-
-      // if (expectedSignature === signaturev2) {
-      //   let epay = 0;
-      //   if (data.data.paymentcard.amount === 499) {
-      //     epay = 5;
-      //   } else if (data.data.paymentcard.amount === 1440) {
-      //     epay = 15;
-      //   } else if (data.data.paymentcard.amount === 2350) {
-      //     epay = 25;
-      //   } else if (data.data.paymentcard.amount === 4599) {
-      //     epay = 50;
-      //   } else if (data.data.paymentcard.amount === 8999) {
-      //     epay = 100;
-      //   } else if (data.data.paymentcard.amount === 21250) {
-      //     epay = 250;
-      //   } else if (data.data.paymentcard.amount === 71999) {
-      //     epay = 1000;
-      //   } else if (data.data.paymentcard.amount === 174999) {
-      //     epay = 2500;
-      //   } else {
-      //     const match = data.data.paymentcard.description.match(/\d+/);
-      //     epay = match ? parseInt(match[0], 10) : null;
-      //   }
-      //   const user = this.usuarioService.findOneByEmail(data.data.reference);
-      //   (await user).esencia = (await user).esencia + epay;
-      //   this.usuarioService.updateUsuario(await user, (await user).id);
-      //   return this.prisma.compra.create({
-      //     data: {
-      //       email: data.data.reference,
-      //       bank_order: data.data.bankOrderCode,
-      //     },
-      //   });
-      // } else {
-      //   console.log('Firma no válida');
-      // }
     } catch (error) {
-      console.log('Veryfication error', error);
+      console.log('Validation error:', error);
+      throw new BadRequestException('Validation failed: ' + error.message);
     }
   }
 
@@ -260,7 +203,6 @@ export class TropiPayController {
     const delay = (ms: number) =>
       new Promise((resolve) => setTimeout(resolve, ms));
 
-    // Retrasamos el proceso 10 segundos (10000 milisegundos)
     await delay(10000);
     return await this.tropiPayService.validateBankOrder(data);
   }
@@ -275,9 +217,9 @@ export class TropiPayController {
   @Post('tcharged')
   async transferPaydHook(@Body() data: any, @Res() res: Response) {
     console.log('Hook transaction_charged data:');
-    // console.log(JSON.stringify(data, null, 2));
     return res.status(200).send('Webhook received successfully');
   }
+
   @Post('verifycation')
   async verifycation(
     @Body()
@@ -288,14 +230,6 @@ export class TropiPayController {
     },
     @Res() res: Response,
   ) {
-    // const clientId = process.env.TROPIPAY_CLIENT_ID;
-    // const clientSecret = process.env.TROPIPAY_CLIENT_SECRET;
-    // const { signature, bankOrderCode, originalCurrencyAmount } = data;
-
-    // const messageToSign = `${bankOrderCode}${clientId}${clientSecret}${originalCurrencyAmount}`;
-
-    // const expectedSignature = sha256(messageToSign);
-
     return res.status(200).send('Webhook received successfully');
   }
 }

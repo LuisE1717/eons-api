@@ -7,11 +7,20 @@ import { Module } from '@nestjs/common';
       transport: {
         host: 'BREVO_HOST',
         port: 587,
-        secure: false,
+        secure: false, // true for 465, false for other ports
         auth: {
           user: 'BREVO_USER',
           pass: 'BREVO_PASSWORD',
         },
+        tls: {
+          rejectUnauthorized: false, // Para evitar problemas de certificado
+        },
+        connectionTimeout: 10000, // 10 segundos de timeout
+        greetingTimeout: 10000, // 10 segundos de timeout
+        socketTimeout: 10000, // 10 segundos de timeout
+      },
+      defaults: {
+        from: '"EONS" <eonss7070@gmail.com>',
       },
     }),
   ],

@@ -7,10 +7,10 @@ import { NotificationDto, patchNotification } from './dto/NotificationsDto';
 export class NotificationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAllUnreadNotifications(id: string): Promise<notificaciones[]> {
+  async findAllUnreadNotifications(userId: string): Promise<notificaciones[]> {
     return this.prisma.notificaciones.findMany({
       where: {
-        id_usuario: id,
+        id_usuario: userId,
         estado: false,
       },
     });
