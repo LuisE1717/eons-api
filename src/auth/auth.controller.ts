@@ -43,9 +43,14 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  @Post('google')
+  @Post('google-login')
   googleLogin(@Body() registerDto: RegisterDto) {
-    return this.authService.google(registerDto);
+    return this.authService.googleLogin(registerDto);
+  }
+
+  @Post('google-register')
+  googleRegister(@Body() registerDto: RegisterDto) {
+    return this.authService.googleRegister(registerDto);
   }
 
   @Post('microsoft')

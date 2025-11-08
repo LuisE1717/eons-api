@@ -66,6 +66,34 @@ export class AuthService {
     return this.sendUser(user);
   }
 
+  async googleLogin({ email, password }: RegisterDto) {
+    const user = await this.userService.findOneByEmail(email);
+
+    if (!user) {
+      throw new UnauthorizedException('Usuario no existe');
+    }
+
+    return this.sendUser(user);
+  }
+
+  async googleRegister({ email, password }: RegisterDto) {
+    const user = await this.userService.findOneByEmail(email);
+
+    if (user) {
+      throw new BadRequestException('El usuario ya existe');
+    }
+
+    const newUser = await this.userService.createUsuario({
+      email,
+      password: await bcryptjs.hash(password, 10),
+      type: 'google',
+      isEmailVerified: true,
+      esencia: 0,
+    });
+
+    return this.sendUser(newUser);
+  }
+
   async google({ email, password }: RegisterDto) {
     const user = await this.userService.findOneByEmail(email);
 
