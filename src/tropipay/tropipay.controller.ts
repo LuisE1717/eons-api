@@ -8,6 +8,7 @@ import {
   BadRequestException,
   Query,
   Logger,
+  Res,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { TropiPayService } from './tropipay.service';
