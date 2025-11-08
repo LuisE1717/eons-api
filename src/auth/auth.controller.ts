@@ -43,6 +43,16 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @Post('google')
+  googleLogin(@Body() registerDto: RegisterDto) {
+    return this.authService.google(registerDto);
+  }
+
+  @Post('microsoft')
+  microsoftLogin(@Body() registerDto: RegisterDto) {
+    return this.authService.microsoft(registerDto);
+  }
+
   @Get('login')
   @UseGuards(RefreshGuard)
   recoverSection(@Headers('authorization') refreshToken: string) {
