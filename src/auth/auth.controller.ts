@@ -86,12 +86,6 @@ export class AuthController {
     return await this.authService.readDocumentation(req?.user?.id);
   }
 
-  @Get('is-readed')
-  @UseGuards(AccessGuard)
-  async isReaded(@Request() req) {
-    return await this.authService.readDocumentation(req?.user?.id);
-  }
-
   @Post('request-password-reset')
   requestPasswordReset(
     @Body() resetPasswordRequestDto: ResetPasswordRequestDto,

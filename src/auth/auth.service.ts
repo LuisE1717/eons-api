@@ -22,14 +22,8 @@ import { NotificationsService } from 'src/notifications/notifications.service';
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly isDevelopment = process.env.NODE_ENV === 'development';
-  private readonly frontendUrl = this.isDevelopment
-    ? 'http://localhost:4321'
-    : 'https://eons.es';
-  private readonly backendUrl = this.isDevelopment
-    ? 'http://localhost:3000'
-    : 'https://api.eons.es';
-
+  private readonly frontendUrl = process.env.FURL;
+  private readonly backendUrl = process.env.BURL;
   constructor(
     private readonly userService: UsuariosService,
     private readonly jwtService: JwtService,
@@ -211,16 +205,6 @@ export class AuthService {
       throw new NotFoundException('Email does not exist');
     }
 
-<<<<<<< HEAD
-=======
-    // try {
-    //    const payload = await this.jwtService.verifyAsync(token);
-    //    email = payload.email;
-    //  } catch (e) {
-    //    throw new BadRequestException('Invalid or expired token');
-    // }
-
->>>>>>> fa032c9 (Fix reset password problem)
     user.password = await bcryptjs.hash(newPassword, 10);
     await this.userService.updateUsuario(
       { password: user.password, email: user.email, type: user.type },
@@ -259,20 +243,6 @@ export class AuthService {
     }
 
     return { message: 'Verification email sent' };
-  }
-  async readDocumentation(userId: string) {
-    try {
-      this.notificationsService.createNotification({
-        nombre: 'Instrucciones de uso leidas',
-        id_usuario: userId,
-        tipo: 'readDocumentation',
-        descripcion: 'A leido las instrucciones de uso',
-        estado: false,
-      });
-      return { success: true };
-    } catch (error) {
-      throw new Error('Token inválido o expirado');
-    }
   }
 
   async verifyEmail(token: string) {
