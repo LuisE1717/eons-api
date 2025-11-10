@@ -76,7 +76,7 @@ export class TransferenciaService {
       orderBy: {
         date: 'desc',
       },
-      take: 30,
+      // take: 30,
       include: {
         usuario: {
           select: {
@@ -87,9 +87,9 @@ export class TransferenciaService {
     });
 
     return transfers.map((transfer) => ({
-      id: transfer.id,
-      senderEmail: transfer.usuario?.email,
-      receiverEmail: transfer.receiver,
+      user_id: transfer.id,
+      sender: transfer.usuario?.email,
+      receiver: transfer.receiver,
       amount: transfer.amount,
       date: transfer.date,
     }));

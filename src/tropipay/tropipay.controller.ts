@@ -8,7 +8,9 @@ import {
   BadRequestException,
   Query,
   Logger,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { TropiPayService } from './tropipay.service';
 import { TropiPayV3Service } from './tropipay-v3.service';
 import { EsenciasService } from 'src/esencia/esencia.service';
@@ -199,6 +201,36 @@ export class TropiPayController {
 
   @Post('validate-payment')
   async validatePayment(@Body() data: any) {
+    const delay = (ms: number) =>
+      new Promise((resolve) => setTimeout(resolve, ms));
+
+    await delay(10000);
     return await this.tropiPayService.validateBankOrder(data);
+  }
+
+  @Post('tcompleted')
+  async transferCompletedHook(@Body() data: any, @Res() res: Response) {
+    console.log('Hook transaction_completed data:');
+    console.log(JSON.stringify(data, null, 2));
+    return res.status(200).send('Webhook received successfully');
+  }
+
+  @Post('tcharged')
+  async transferPaydHook(@Body() data: any, @Res() res: Response) {
+    console.log('Hook transaction_charged data:');
+    return res.status(200).send('Webhook received successfully');
+  }
+
+  @Post('verifycation')
+  async verifycation(
+    @Body()
+    data: {
+      signature: string;
+      bankOrderCode: string;
+      originalCurrencyAmount: string;
+    },
+    @Res() res: Response,
+  ) {
+    return res.status(200).send('Webhook received successfully');
   }
 }

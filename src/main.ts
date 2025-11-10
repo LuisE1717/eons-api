@@ -7,12 +7,12 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
-  // 🔧 CONFIGURACIÓN CORS - AGREGA ESTO
   app.enableCors({
     origin: [
       'https://eons.es',
       'https://www.eons.es',
       'http://localhost:4321', // para desarrollo
+      'https://dev.eons.es', // añadido desde develop
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: [
@@ -34,12 +34,12 @@ async function bootstrap() {
     optionsSuccessStatus: 204,
   });
 
-  // 🔧 MIDDLEWARE PERSONALIZADO PARA HEADERS - AGREGA ESTO TAMBIÉN
   app.use((req, res, next) => {
     const allowedOrigins = [
       'https://eons.es',
       'https://www.eons.es',
       'http://localhost:4321',
+      'https://dev.eons.es', // añadido desde develop
     ];
     const origin = req.headers.origin as string;
 
@@ -65,7 +65,6 @@ async function bootstrap() {
     next();
   });
 
-  // Pipe de validación global
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -78,7 +77,7 @@ async function bootstrap() {
   await app.listen(port);
 
   logger.log(`🚀 Application running on: http://localhost:${port}`);
-  logger.log(`🌍 CORS enabled for: https://eons.es, https://www.eons.es`);
+  logger.log(`🌍 CORS enabled for: https://eons.es, https://www.eons.es, https://dev.eons.es`);
 }
 
 bootstrap();

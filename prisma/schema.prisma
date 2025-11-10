@@ -41,7 +41,9 @@ model usuario {
   type                    String                    @db.VarChar
   esencia                 Float?
   createdAt               DateTime                  @default(now())
+  readDocumentation       Boolean                   @default(false)
   hasSeenInstructions     Boolean                   @default(false)
+  launch                  launch[]
   ResultadoDialogoAbierto ResultadoDialogoAbierto[]
   espiritu                espiritu[]
   evaluacion_general      evaluacion_general?
@@ -135,24 +137,25 @@ model notificaciones {
 }
 
 model launch {
-  id         String   @id
+  id         String   @id @default(cuid())
   userId     String
   type       String
   shortType  String
   hexResults String[]
   steps      Int
   createdAt  DateTime @default(now())
-  updatedAt  DateTime
+  updatedAt  DateTime @updatedAt
+  user       usuario  @relation(fields: [userId], references: [id])
 }
 
 model message {
-  id         String   @id
+  id         String   @id @default(cuid())
   type       String
   segmentKey String
   language   String
   content    String
   createdAt  DateTime @default(now())
-  updatedAt  DateTime
+  updatedAt  DateTime @updatedAt
 }
 
 model LanzamientoSistema {

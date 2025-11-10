@@ -17,6 +17,8 @@ import { TransferenciaModule } from './transferencia/transferencia.module';
 import { WebsocketModule } from './websockets/websocket.module';
 import { EsenciaModule } from './esencia/esencia.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { LaunchModule } from './launch/launch.module';
+import { MessagesModule } from './messages/messages.module';
 import { LanzamientosModule } from './lanzamientos/lanzamientos.module';
 
 @Module({
@@ -41,6 +43,8 @@ import { LanzamientosModule } from './lanzamientos/lanzamientos.module';
     TransferenciaModule,
     WebsocketModule,
     NotificationsModule,
+    LaunchModule,
+    MessagesModule,
   ],
   providers: [UserCleanupService],
   controllers: [],
