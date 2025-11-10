@@ -182,13 +182,13 @@ export class AuthService {
       return;
     }
 
-    const token = await this.jwtService.signAsync(
-      { email },
-      {
-        expiresIn: '1h',
-        secret: jwtConstants.accessSecret,
-      },
-    );
+    // Incluir tanto email como id en el payload del token
+    const payload = { email: user.email, id: user.id };
+
+    const token = await this.jwtService.signAsync(payload, {
+      expiresIn: '1h',
+      secret: jwtConstants.accessSecret,
+    });
 
     try {
       await this.emailService.sendPasswordResetEmail(
